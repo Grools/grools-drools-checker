@@ -42,6 +42,7 @@ import fr.cea.ig.grools.fact.Observation;
 import fr.cea.ig.grools.fact.ObservationImpl;
 import fr.cea.ig.grools.fact.ObservationType;
 import fr.cea.ig.grools.fact.PriorKnowledge;
+import fr.cea.ig.grools.fact.PriorKnowledgeImpl;
 import fr.cea.ig.grools.logic.TruthValue;
 import fr.cea.ig.grools.fact.RelationImpl;
 import fr.cea.ig.grools.fact.Relation;

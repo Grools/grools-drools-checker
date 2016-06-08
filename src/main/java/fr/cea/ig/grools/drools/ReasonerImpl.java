@@ -37,11 +37,12 @@ import org.kie.internal.marshalling.MarshallerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Set;
 
 /**
  * ReasonerImpl
@@ -62,64 +63,54 @@ public final class ReasonerImpl implements Reasoner {
     }
 
 
+    private static <T> void storeQueryResults( @NonNull final QueryResults rows, @NonNull final String field, @NonNull final Set<T> results){
+
+        for( final QueryResultsRow r : rows){
+            final Object object = r.get( field );
+            assert( object instanceof Set<?> );
+            results.addAll((Set<T> ) object);
+        }
+    }
+
+    private static <T> T getResult( @NonNull final QueryResults rows, @NonNull final String field, Class<T> type){
+        final Iterator<QueryResultsRow> iterator= rows.iterator();
+        T result = null;
+        if( iterator.hasNext()) {
+            final Object object =  iterator.next().get( field );
+            assert(type.cast( object ) != null);
+            result = type.cast( object );
+        }
+        return result;
+
+    }
+
     private <T> T query( @NonNull final String queryName, @NonNull final String field, Class<T> type){
-        final QueryResults              rows    = kieSession.getQueryResults( queryName );
-        final Iterator<QueryResultsRow> iterator= rows.iterator();
-        T result = null;
-        if( iterator.hasNext()) {
-            final Object object =  iterator.next().get( field );
-            assert(type.cast( object ) != null);
-            result = type.cast( object );
-        }
-        return result;
+        final QueryResults rows = kieSession.getQueryResults( queryName );
+        return getResult(rows, field, type);
     }
 
 
-    private <T> T query( @NonNull final String queryName, @NonNull final Object parameter, @NonNull final String field, Class<T> type){
-        final QueryResults              rows    = kieSession.getQueryResults( queryName, parameter );
-        final Iterator<QueryResultsRow> iterator= rows.iterator();
-        T result = null;
-        if( iterator.hasNext()) {
-            final Object object =  iterator.next().get( field );
-            assert(type.cast( object ) != null);
-            result = type.cast( object );
-        }
-        return result;
+    private <T> T query( @NonNull final String queryName, @NonNull final String field, Class<T> type, @NonNull final Object... parameters){
+        final QueryResults rows = kieSession.getQueryResults( queryName, parameters );
+        return getResult(rows, field, type);
     }
 
 
-    private <T> T query( @NonNull final String queryName, @NonNull final Object parameter1, @NonNull final Object parameter2, @NonNull final String field, Class<T> type){
-        final QueryResults              rows    = kieSession.getQueryResults( queryName, parameter1, parameter2 );
-        final Iterator<QueryResultsRow> iterator= rows.iterator();
-        T result = null;
-        if( iterator.hasNext()) {
-            final Object object =  iterator.next().get( field );
-            assert(type.cast( object ) != null);
-            result = type.cast( object );
-        }
-        return result;
-    }
-
-
-    private <T> void query( @NonNull final String queryName, @NonNull final String field, @NonNull final List<T> results){
+    private <T> void query( @NonNull final String queryName, @NonNull final String field, @NonNull final Set<T> results){
         final QueryResults  rows    = kieSession.getQueryResults( queryName );
-
-        for( final QueryResultsRow r : rows){
-            final Object object = r.get( field );
-            assert( object instanceof List<?> );
-            results.addAll((List<T>) object);
-        }
+        storeQueryResults(rows, field, results);
     }
 
 
-    private <T> void query( @NonNull final String queryName, @NonNull final Object parameter, @NonNull final String field, @NonNull final List<T> results){
+    private <T> void query( @NonNull final String queryName, @NonNull final Object parameter, @NonNull final String field, @NonNull final Set<T> results){
         final QueryResults rows    = kieSession.getQueryResults( queryName, parameter );
+        storeQueryResults(rows, field, results);
+    }
 
-        for( final QueryResultsRow r : rows){
-            final Object object = r.get( field );
-            assert( object instanceof List<?> );
-            results.addAll((List<T>) object);
-        }
+
+    private <T> void query( @NonNull final String queryName, @NonNull final Object parameter1, @NonNull final Object parameter2, @NonNull final String field, @NonNull final Set<T> results){
+        final QueryResults rows    = kieSession.getQueryResults( queryName, parameter1, parameter2 );
+        storeQueryResults(rows, field, results);
     }
 
 
@@ -230,59 +221,90 @@ public final class ReasonerImpl implements Reasoner {
     @Override
     public void insert(@NonNull final Object... data) {
         Arrays.stream(data)
-                .forEach( (i) -> register(i, verbosity, kieSession) );
+              .forEach( (i) -> register(i, verbosity, kieSession) );
+    }
+
+
+    @Override
+    public void insert(@NonNull final Collection<?> data) {
+        data.stream()
+            .forEach( (i) -> register(i, verbosity, kieSession) );
     }
 
 
     @Override
     public void delete(@NonNull final Object... data) {
         Arrays.stream(data)
-                .forEach( (i) -> kieSession.delete( kieSession.getFactHandle( i ) ) );
+              .forEach( (i) -> kieSession.delete( kieSession.getFactHandle( i ) ) );
+    }
+
+
+    @Override
+    public void delete(@NonNull final Collection<?> data) {
+        data.stream()
+            .forEach( (i) -> kieSession.delete( kieSession.getFactHandle( i ) ) );
     }
 
     @Override
-    public List<Concept> getConcepts(  ){
-        final List<Concept> concepts = new ArrayList<>();
+    public Set<Concept> getConcepts(  ){
+        final Set<Concept> concepts = new HashSet<>();
         query( "getConcepts", "$concepts", concepts );
         return concepts;
     }
 
-    @Override
-    public Relation getRelation( final Concept $source, final Concept $target ){
-         return query("getRelation", $source, $target, "$relation", Relation.class);
-    }
 
     @Override
     public Concept getConcept(@NonNull final String $name){
-        return query("getConcept", $name, "$concept", Concept.class);
+        return query("getConcept", "$concept", Concept.class, $name);
     }
 
 
     @Override
     public PriorKnowledge getPriorKnowledge(@NonNull final String $name){
-        return query("getPriorKnowledge", $name, "$priorknowledge", PriorKnowledge.class);
+        return query("getPriorKnowledge", "$priorknowledge", PriorKnowledge.class, $name);
     }
 
 
     @Override
-    public List<Relation> getRelations(){
-        final List<Relation> relations = new ArrayList<>();
+    public Set<PriorKnowledge> getPriorKnowledges(){
+        final Set<PriorKnowledge> priorKnowledges = new HashSet<>();
+        query( "getPriorKnowledges", "$priorKnowledges", priorKnowledges);
+        return priorKnowledges;
+    }
+
+    @Override
+    public Relation getRelation( final Concept $source, final Concept $target, final RelationType $type ){
+        return query("getRelation", "$relation", Relation.class, $source, $target, $type);
+    }
+
+    @Override
+    public Set<Relation> getRelations( final Concept $source, final Concept $target ){
+        final Set<Relation> relations = new HashSet<>();
+        query("getRelationsUsingImpliedConcepts", $source, $target, "$relations", relations);
+        return relations;
+    }
+
+
+
+    @Override
+    public Set<Relation> getRelations(){
+        final Set<Relation> relations = new HashSet<>();
         query( "getRelations", "$relations", relations);
         return relations;
     }
 
 
     @Override
-    public List<Observation> getObservations(){
-        final List<Observation> observations = new ArrayList<>();
+    public Set<Observation> getObservations(){
+        final Set<Observation> observations = new HashSet<>();
         query( "getObservations", "$observations", observations );
         return observations;
     }
 
 
     @Override
-    public List<Observation>  getObservationsUsingConceptRelation(@NonNull final String conceptId) {
-        final List<Observation> observations = new ArrayList<>();
+    public Set<Observation>  getObservationsUsingConceptRelation(@NonNull final String conceptId) {
+        final Set<Observation> observations = new HashSet<>();
         query( "getObservationsUsingConceptRelation", "$observations", observations );
         return observations;
     }
@@ -290,7 +312,7 @@ public final class ReasonerImpl implements Reasoner {
 
     @Override
     public Observation getObservation(@NonNull final String $name) {
-        return query( "getObservation", $name, "$observation", Observation.class );
+        return query( "getObservation", "$observation", Observation.class, $name );
     }
 
 

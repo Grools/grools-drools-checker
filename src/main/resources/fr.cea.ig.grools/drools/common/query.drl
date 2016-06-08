@@ -36,7 +36,7 @@ package fr.cea.ig.grools;
 import fr.cea.ig.grools.fact.Concept;
 import fr.cea.ig.grools.fact.Observation;
 import fr.cea.ig.grools.fact.ObservationType;
-import fr.cea.ig.grools.drools.PriorKnowledge;
+import fr.cea.ig.grools.fact.PriorKnowledge;
 import fr.cea.ig.grools.fact.Relation;
 import fr.cea.ig.grools.fact.RelationType;
 import fr.cea.ig.grools.logic.TruthValue;
@@ -55,6 +55,10 @@ query getConcepts(  )
     $concepts : Set() from collect ( Concept() )
 end
 
+query getPriorKnowledges(  )
+    $priorKnowledges : Set() from collect ( PriorKnowledge() )
+end
+
 query getConcept( String $name )
     $concept : Concept( name == $name )
 end
@@ -63,8 +67,12 @@ query getRelations(  )
     $relations : Set() from collect ( Relation() )
 end
 
-query getRelation( Concept $source, Concept $target )
-    $relation :Relation( $source := source, $target := target)
+query getRelationsUsingImpliedConcepts( Concept $source, Concept $target )
+    $relations :Set() from collect ( Relation( source == $source, target == $target) )
+end
+
+query getRelation( Concept $source, Concept $target, RelationType $type )
+    $relation :Relation( source == $source, target == $target, type == $type)
 end
 
 query getObservations(  )

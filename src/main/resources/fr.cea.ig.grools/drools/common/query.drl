@@ -71,6 +71,15 @@ query getRelationsUsingImpliedConcepts( Concept $source, Concept $target )
     $relations :Set() from collect ( Relation( source == $source, target == $target) )
 end
 
+query getRelationsWithSource( Concept $source )
+    $relations :Set() from collect ( Relation( source == $source) )
+end
+
+query getRelationsWithTarget( Concept $target )
+    $relations :Set() from collect ( Relation( target == $target) )git ts
+
+end
+
 query getRelation( Concept $source, Concept $target, RelationType $type )
     $relation :Relation( source == $source, target == $target, type == $type)
 end

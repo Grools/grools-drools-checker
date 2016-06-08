@@ -285,6 +285,19 @@ public final class ReasonerImpl implements Reasoner {
     }
 
 
+    @Override
+    public Set<Relation> getRelationsWithSource( final Concept $source ){
+        final Set<Relation> relations = new HashSet<>();
+        query("getRelationsWithSource", $source, "$relations", relations);
+        return relations;
+    }
+
+    @Override
+    public Set<Relation> getRelationsWithTarget( final Concept $target ){
+        final Set<Relation> relations = new HashSet<>();
+        query("getRelationsWithTarget", $target, "$relations", relations);
+        return relations;
+    }
 
     @Override
     public Set<Relation> getRelations(){

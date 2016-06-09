@@ -76,8 +76,7 @@ query getRelationsWithSource( Concept $source )
 end
 
 query getRelationsWithTarget( Concept $target )
-    $relations :Set() from collect ( Relation( target == $target) )git ts
-
+    $relations :Set() from collect ( Relation( target == $target) )
 end
 
 query getRelation( Concept $source, Concept $target, RelationType $type )

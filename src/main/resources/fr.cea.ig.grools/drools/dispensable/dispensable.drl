@@ -74,7 +74,7 @@ rule "Prediction related to prior-knowledge with no child" when
                                          )
 
 then
-    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Prediction @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Prediction @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     modify($pk){
         setPrediction(  $result  )
     };
@@ -111,7 +111,7 @@ rule "Expectation related to prior-knowledge with no parent" when
 
 
 then
-    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Expectation @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Expectation @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     modify($pk){
         setExpectation(  $result  )
     };
@@ -152,7 +152,7 @@ rule "Prediction related to partition prior-knowledge" when
                                          )
 
 then
-    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Prediction @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Prediction @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 
     modify($pk){
         setPrediction(  $result  )
@@ -197,7 +197,7 @@ rule "Expectation related to partition prior-knowledge" when
                                          )
 
 then
-    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Expectation @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Expectation @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     modify($pk){
         setExpectation(  $result  )
     };
@@ -237,7 +237,7 @@ rule "Prediction related to type of prior-knowledge" when
                                          )
 
 then
-    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Prediction @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Prediction @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 
     modify($pk){
         setPrediction(  $choice  )
@@ -287,7 +287,7 @@ rule "Expectation related to type of prior-knowledge" when
                                          )
 
 then
-    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Expectation @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Expectation @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     modify($pk){
         setExpectation(  $parent.getExpectation()  )
     };
@@ -315,7 +315,7 @@ rule "Expectation False related to type of prior-knowledge" when
                                          )
 
 then
-    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Expectation @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Expectation @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     modify($pk){
         setExpectation(  $parent.getExpectation()  )
     };

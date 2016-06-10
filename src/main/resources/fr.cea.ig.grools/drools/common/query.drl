@@ -59,6 +59,20 @@ query getPriorKnowledges(  )
     $priorKnowledges : Set() from collect ( PriorKnowledge() )
 end
 
+query getLeavesPriorKnowledges(  )
+    $notLeaves: Set() from accumulate( $r: Relation(source isA PriorKnowledge, target isA PriorKnowledge),
+                                                           init( Set $set = new HashSet(); ),
+                                                           action( $set.add($r.getTarget() ); ),
+                                                           result( $set )
+
+                                     )
+    $leaves : Set() from accumulate( $pk: PriorKnowledge(),
+                                        init( Set $set = new HashSet(); ),
+                                        action( if( ! $notLeaves.contains($pk) ) $set.add($pk); ),
+                                        result( $set )
+                                   )
+end
+
 query getConcept( String $name )
     $concept : Concept( name == $name )
 end

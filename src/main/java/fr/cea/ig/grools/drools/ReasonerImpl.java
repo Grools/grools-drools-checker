@@ -273,6 +273,13 @@ public final class ReasonerImpl implements Reasoner {
     }
 
     @Override
+    public Set<PriorKnowledge> getLeavesPriorKnowledges(){
+        final Set<PriorKnowledge> priorKnowledges = new HashSet<>();
+        query( "getLeavesPriorKnowledges", "$leaves", priorKnowledges);
+        return priorKnowledges;
+    }
+
+    @Override
     public Relation getRelation( final Concept $source, final Concept $target, final RelationType $type ){
         return query("getRelation", "$relation", Relation.class, $source, $target, $type);
     }

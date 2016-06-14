@@ -37,12 +37,15 @@ import org.kie.internal.marshalling.MarshallerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * ReasonerImpl
@@ -342,6 +345,17 @@ public final class ReasonerImpl implements Reasoner {
         return query( "getObservation", "$observation", Observation.class, $name );
     }
 
+    @Override
+    public Set<Relation> getSubGraph( final Concept concept ){
+        final Set<Relation>         relations = getRelationsWithTarget( concept );
+        final List<Set<Relation>>   queue     = relations.stream()
+                                                         .map( relation -> getSubGraph( relation.getSource() ) )
+                                                         .collect( Collectors.toList() );
+        for( final Set<Relation> children : queue)
+                relations.addAll( children );
+        //relations.addAll( getSubGraph( relation.getSource() ) ); // throw ConcurrentModificationException
+        return relations;
+    }
 
     @Override
     public void reasoning(){

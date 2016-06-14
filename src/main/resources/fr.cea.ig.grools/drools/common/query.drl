@@ -73,7 +73,7 @@ query getLeavesPriorKnowledges(  )
                                    )
 end
 
-query getTopPriorKnowledges(  )
+query getTopsPriorKnowledges(  )
     $notTops: Set() from accumulate( $r: Relation(source isA PriorKnowledge, target isA PriorKnowledge),
                                                            init( Set $set = new HashSet(); ),
                                                            action( $set.add($r.getSource() ); ),

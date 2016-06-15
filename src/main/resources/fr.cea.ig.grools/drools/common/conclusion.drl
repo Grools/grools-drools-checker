@@ -45,8 +45,8 @@ import fr.cea.ig.grools.logic.TruthValue;
 import fr.cea.ig.grools.logic.TruthValueSet;
 import fr.cea.ig.grools.logic.TruthValuePowerSet;
 
-rule "Priorknowledge is Confirmed Presence" when
-    $pk: PriorKnowledge( ) @Watch( prediction, expectation )
+rule "Priorknowledge is Confirmed Presence"  agenda-group  "conclusion" when
+    $pk: PriorKnowledge( )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.T, this not contains TruthValueSet.F, this not contains TruthValueSet.B, this not contains TruthValueSet.N )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.T, this not contains TruthValueSet.F, this not contains TruthValueSet.B, this not contains TruthValueSet.N )
 then
@@ -55,39 +55,39 @@ then
     };
 end
 
-rule "Priorknowledge is Unexpected Absence" when
-    $pk: PriorKnowledge( ) @Watch( prediction, expectation )
+rule "Priorknowledge is Unexpected Absence" agenda-group  "conclusion" when
+    $pk: PriorKnowledge( )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.F)
-    $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.T, this not contains TruthValueSet.F, this not contains TruthValueSet.B, this not contains TruthValueSet.N )
+    $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.T, this not contains TruthValueSet.F, this not contains TruthValueSet.B, this not contains TruthValueSet.N  && this not contains TruthValueSet.n )
 then
     modify( $pk ){
         setConclusion( Conclusion.UNEXPECTED_ABSENCE)
     };
 end
 
-rule "Priorknowledge is Contradictory Absence" when
-    $pk: PriorKnowledge( ) @Watch( prediction, expectation )
-    $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.B, this not contains TruthValueSet.F, this not contains TruthValueSet.N )
-    $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.T, this not contains TruthValueSet.F, this not contains TruthValueSet.B, this not contains TruthValueSet.N )
+rule "Priorknowledge is Contradictory Absence" agenda-group  "conclusion" when
+    $pk: PriorKnowledge( )
+    $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.B, this not contains TruthValueSet.F, this not contains TruthValueSet.N  && this not contains TruthValueSet.n )
+    $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.T, this not contains TruthValueSet.F, this not contains TruthValueSet.B, this not contains TruthValueSet.N  && this not contains TruthValueSet.n )
 then
     modify( $pk ){
         setConclusion( Conclusion.CONTRADICTORY_ABSENCE)
     };
 end
 
-rule "Priorknowledge is Mising" when
-    $pk: PriorKnowledge( ) @Watch( prediction, expectation )
-    $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.N, this not contains TruthValueSet.F)
-    $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.T, this not contains TruthValueSet.F, this not contains TruthValueSet.B, this not contains TruthValueSet.N )
+rule "Priorknowledge is Mising" agenda-group  "conclusion" when
+    $pk: PriorKnowledge( )
+    $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.N || this contains TruthValueSet.n, this not contains TruthValueSet.F)
+    $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.T, this not contains TruthValueSet.F, this not contains TruthValueSet.B, this not contains TruthValueSet.N, this not contains TruthValueSet.n )
 then
     modify( $pk ){
         setConclusion( Conclusion.MISSING)
     };
 end
 
-rule "Priorknowledge is Unexpected Presence" when
-    $pk: PriorKnowledge( ) @Watch( prediction, expectation )
-    $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.T, this not contains TruthValueSet.F, this not contains TruthValueSet.B, this not contains TruthValueSet.N )
+rule "Priorknowledge is Unexpected Presence" agenda-group  "conclusion" when
+    $pk: PriorKnowledge( )
+    $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.T, this not contains TruthValueSet.F, this not contains TruthValueSet.B, this not contains TruthValueSet.N  && this not contains TruthValueSet.n  )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.F )
 then
     modify( $pk ){
@@ -95,8 +95,8 @@ then
     };
 end
 
-rule "Priorknowledge is Confirmed Absence" when
-    $pk: PriorKnowledge( ) @Watch( prediction, expectation )
+rule "Priorknowledge is Confirmed Absence"agenda-group  "conclusion"  when
+    $pk: PriorKnowledge( )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.F )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.F )
 then
@@ -105,9 +105,9 @@ then
     };
 end
 
-rule "Priorknowledge is Contradictory Presence" when
-    $pk: PriorKnowledge( ) @Watch( prediction, expectation )
-    $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.B, this not contains TruthValueSet.F, this not contains TruthValueSet.N )
+rule "Priorknowledge is Contradictory Presence" agenda-group  "conclusion" when
+    $pk: PriorKnowledge( )
+    $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.B, this not contains TruthValueSet.F, this not contains TruthValueSet.N  && this not contains TruthValueSet.n )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.F )
 then
     modify( $pk ){
@@ -115,8 +115,8 @@ then
     };
 end
 
-rule "Priorknowledge is Absent" when
-    $pk: PriorKnowledge( ) @Watch( prediction, expectation )
+rule "Priorknowledge is Absent" agenda-group  "conclusion" when
+    $pk: PriorKnowledge( )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.N || this contains TruthValueSet.n, this not contains TruthValueSet.F )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.F )
 then
@@ -124,68 +124,68 @@ then
         setConclusion( Conclusion.ABSENT)
     };
 end
-rule "Priorknowledge is Ambiguous Presence" when
-    $pk: PriorKnowledge( ) @Watch( prediction, expectation )
-    $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.T, this not contains TruthValueSet.F, this not contains TruthValueSet.B, this not contains TruthValueSet.N )
-    $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.B, this not contains TruthValueSet.F, this not contains TruthValueSet.N )
+rule "Priorknowledge is Ambiguous Presence" agenda-group  "conclusion" when
+    $pk: PriorKnowledge( )
+    $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.T, this not contains TruthValueSet.F, this not contains TruthValueSet.B, this not contains TruthValueSet.N  && this not contains TruthValueSet.n )
+    $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.B, this not contains TruthValueSet.F, this not contains TruthValueSet.N  && this not contains TruthValueSet.n )
 then
     modify( $pk ){
         setConclusion( Conclusion.AMBIGUOUS_PRESENCE)
     };
 end
 
-rule "Priorknowledge is Ambiguous Absence" when
-    $pk: PriorKnowledge( ) @Watch( prediction, expectation )
+rule "Priorknowledge is Ambiguous Absence" agenda-group  "conclusion" when
+    $pk: PriorKnowledge( )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.F )
-    $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.B, this not contains TruthValueSet.F, this not contains TruthValueSet.N )
+    $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.B, this not contains TruthValueSet.F, this not contains TruthValueSet.N  && this not contains TruthValueSet.n )
 then
     modify( $pk ){
         setConclusion( Conclusion.AMBIGUOUS_ABSENCE)
     };
 end
 
-rule "Priorknowledge is Ambiguous Contradiction" when
-    $pk: PriorKnowledge( ) @Watch( prediction, expectation )
-    $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.B, this not contains TruthValueSet.F, this not contains TruthValueSet.N )
-    $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.B, this not contains TruthValueSet.F, this not contains TruthValueSet.N )
+rule "Priorknowledge is Ambiguous Contradiction" agenda-group  "conclusion" when
+    $pk: PriorKnowledge( )
+    $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.B, this not contains TruthValueSet.F, this not contains TruthValueSet.N  && this not contains TruthValueSet.n )
+    $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.B, this not contains TruthValueSet.F, this not contains TruthValueSet.N  && this not contains TruthValueSet.n )
 then
     modify( $pk ){
         setConclusion( Conclusion.AMBIGUOUS_CONTRADICTORY)
     };
 end
 
-rule "Priorknowledge is Ambiguous" when
-    $pk: PriorKnowledge( ) @Watch( prediction, expectation )
+rule "Priorknowledge is Ambiguous" agenda-group  "conclusion" when
+    $pk: PriorKnowledge( )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.N || this contains TruthValueSet.n, this not contains TruthValueSet.F )
-    $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.B, this not contains TruthValueSet.F, this not contains TruthValueSet.N )
+    $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.B, this not contains TruthValueSet.F, this not contains TruthValueSet.N  && this not contains TruthValueSet.n )
 then
     modify( $pk ){
         setConclusion( Conclusion.AMBIGUOUS)
     };
 end
 
-rule "Priorknowledge is Unconfirmed Presence" when
-    $pk: PriorKnowledge( ) @Watch( prediction, expectation )
+rule "Priorknowledge is Unconfirmed Presence" agenda-group  "conclusion" when
+    $pk: PriorKnowledge( )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.T, this not contains TruthValueSet.F, this not contains TruthValueSet.B, this not contains TruthValueSet.N )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.N || this contains TruthValueSet.n, this not contains TruthValueSet.F )
 then
     modify( $pk ){
-        setConclusion( Conclusion.CONFIRMED_PRESENCE)
+        setConclusion( Conclusion.UNCONFIRMED_PRESENCE)
     };
 end
 
-rule "Priorknowledge is Unconfirmed Absence" when
-    $pk: PriorKnowledge( ) @Watch( prediction, expectation )
+rule "Priorknowledge is Unconfirmed Absence" agenda-group  "conclusion" when
+    $pk: PriorKnowledge( )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.F )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.N || this contains TruthValueSet.n, this not contains TruthValueSet.F )
 then
     modify( $pk ){
-        setConclusion( Conclusion.CONFIRMED_PRESENCE)
+        setConclusion( Conclusion.UNCONFIRMED_PRESENCE)
     };
 end
 
-rule "Priorknowledge is Unconfirmed Contradictory" when
-    $pk: PriorKnowledge( ) @Watch( prediction, expectation )
+rule "Priorknowledge is Unconfirmed Contradictory" agenda-group  "conclusion" when
+    $pk: PriorKnowledge( )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.B, this not contains TruthValueSet.F, this not contains TruthValueSet.N )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.N || this contains TruthValueSet.n, this not contains TruthValueSet.F )
 then
@@ -194,12 +194,12 @@ then
     };
 end
 
-rule "Priorknowledge is Unexplained" when
-    $pk: PriorKnowledge( ) @Watch( prediction, expectation )
-    $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.N || this contains TruthValueSet.n, this not contains TruthValueSet.F )
-    $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.N || this contains TruthValueSet.n, this not contains TruthValueSet.F )
+rule "Priorknowledge is Unexplained" agenda-group  "conclusion" when
+    $pk: PriorKnowledge( )
+    $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this contains TruthValueSet.N || this contains TruthValueSet.n, this not contains TruthValueSet.F, this not contains TruthValueSet.T, this not contains TruthValueSet.B )
+    $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this contains TruthValueSet.N || this contains TruthValueSet.n, this not contains TruthValueSet.F, this not contains TruthValueSet.T, this not contains TruthValueSet.B )
 then
     modify( $pk ){
-        setConclusion( Conclusion.CONFIRMED_PRESENCE)
+        setConclusion( Conclusion.UNEXPLAINED)
     };
 end

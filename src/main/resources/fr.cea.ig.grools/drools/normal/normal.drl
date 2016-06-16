@@ -134,7 +134,7 @@ rule "Prediction related to partition prior-knowledge" when
                                          )
 
     $ets: Set( size > 0 ) from accumulate( $r: Relation( source isA PriorKnowledge.class, target == $pk, type == RelationType.PART ),
-                                                init( $pk.getLabel(); Set $set = Collections.synchronizedSet(EnumSet.noneOf(TruthValueSet.class)); ),
+                                                init( $pk.getName(); Set $set = Collections.synchronizedSet(EnumSet.noneOf(TruthValueSet.class)); ),
                                                 action( $set.addAll( ((PriorKnowledge)$r.getSource()).getPrediction()
                                                                                                      .getTruthValuePowerSet() ); ),
                                                 result( $set )
@@ -209,12 +209,12 @@ rule "Prediction related to type of prior-knowledge" when
     $pk: PriorKnowledge() @Watch( prediction )
     $prediction: TruthValuePowerSet( this == $pk.getPrediction() )
 
-    $r: Relation( source isA PriorKnowledge.class, target == $pk, type == RelationType.SUBTYPE )
-
-    $child:  PriorKnowledge( this == $r.getSource(), prediction != $prediction )
-
-
-    $choice:  TruthValuePowerSet( this == Math.choice($child.getPrediction(), $prediction ), this != $prediction )
+    $ets: Set( size > 0 ) from accumulate( $r: Relation( source isA PriorKnowledge.class, target == $pk, type == RelationType.SUBTYPE ),
+                                                init( $pk.getName();Set $set = Collections.synchronizedSet(EnumSet.noneOf(TruthValuePowerSet.class)); ),
+                                                action( $set.add( ((PriorKnowledge)$r.getSource()).getPrediction() ); ),
+                                                result( $set )
+                                         )
+    $choice: TruthValuePowerSet( this == Math.choice( $ets ), this != $prediction )
 
 
     $concepts: Set() from accumulate( $rel: Relation( source == $pk, target isA PriorKnowledge.class ),

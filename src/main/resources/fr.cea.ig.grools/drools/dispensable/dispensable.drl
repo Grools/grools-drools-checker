@@ -56,7 +56,7 @@ rule "Prediction related to prior-knowledge with no child" when
     $pk: PriorKnowledge() @Watch( prediction )
     $prediction: TruthValuePowerSet( this == $pk.getPrediction() )
 
-    $et: Set() from accumulate( $r: Relation( source isA Observation.class, target == $pk, type#ObservationType.getTypes( ) contains RelationType.PREDICTION ),
+    $et: Set( size > 0 ) from accumulate( $r: Relation( source isA Observation.class, target == $pk, type#ObservationType.getTypes( ) contains RelationType.PREDICTION ),
                                                 init(Set $set = Collections.synchronizedSet(EnumSet.of(TruthValue.n));  ),
                                                 action($set.add( ((Observation)$r.getSource()).getTruthValue()); ),
                                                 result( $set )
@@ -74,7 +74,6 @@ rule "Prediction related to prior-knowledge with no child" when
                                          )
 
 then
-    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Prediction @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     modify($pk){
         setPrediction(  $result  )
     };
@@ -91,7 +90,7 @@ rule "Expectation related to prior-knowledge with no parent" when
     $prediction: TruthValuePowerSet( this == $pk.getPrediction() )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation() )
 
-    $et: Set() from accumulate( $r: Relation( source isA Observation.class, target == $pk, type#ObservationType.getTypes( ) contains RelationType.EXPECTATION ),
+    $et: Set( size > 0 ) from accumulate( $r: Relation( source isA Observation.class, target == $pk, type#ObservationType.getTypes( ) contains RelationType.EXPECTATION ),
                                                 init(Set $set =  Collections.synchronizedSet(EnumSet.of(TruthValue.n));  ),
                                                 action($set.add( ((Observation)$r.getSource()).getTruthValue()); ),
                                                 result( $set )
@@ -111,7 +110,6 @@ rule "Expectation related to prior-knowledge with no parent" when
 
 
 then
-    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Expectation @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     modify($pk){
         setExpectation(  $result  )
     };
@@ -136,7 +134,7 @@ rule "Prediction related to partition prior-knowledge" when
                                          )
 
     $ets: Set( size > 0 ) from accumulate( $r: Relation( source isA PriorKnowledge.class, target == $pk, type == RelationType.PART, ((PriorKnowledge)source).getIsDispensable() == false  ),
-                                                init( System.out.println( $pk.getName() ); Set $set = Collections.synchronizedSet(EnumSet.noneOf(TruthValueSet.class)); ),
+                                                init( $pk.getName(); Set $set = Collections.synchronizedSet(EnumSet.noneOf(TruthValueSet.class)); ),
                                                 action( $set.addAll( ((PriorKnowledge)$r.getSource()).getPrediction()
                                                                                                      .getTruthValuePowerSet() ); ),
                                                 result( $set )
@@ -152,8 +150,6 @@ rule "Prediction related to partition prior-knowledge" when
                                          )
 
 then
-    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Prediction @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-
     modify($pk){
         setPrediction(  $result  )
     };
@@ -179,7 +175,7 @@ rule "Expectation related to partition prior-knowledge" when
                                          )
 
     $ets: Set( size > 0 ) from accumulate( $r: Relation( target isA PriorKnowledge.class, source == $pk, type == RelationType.PART, ((PriorKnowledge)source).getIsDispensable() == false ),
-                                                init( System.out.println( $pk.getName() ); Set $set = Collections.synchronizedSet(EnumSet.noneOf(TruthValueSet.class)); ),
+                                                init( $pk.getName(); Set $set = Collections.synchronizedSet(EnumSet.noneOf(TruthValueSet.class)); ),
                                                 action( $set.addAll(
                                                                     ((PriorKnowledge)$r.getTarget()).getExpectation()
                                                                                                     .getTruthValuePowerSet() ); ),
@@ -197,7 +193,6 @@ rule "Expectation related to partition prior-knowledge" when
                                          )
 
 then
-    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Expectation @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     modify($pk){
         setExpectation(  $result  )
     };
@@ -215,19 +210,12 @@ rule "Prediction related to type of prior-knowledge" when
     $pk: PriorKnowledge() @Watch( prediction )
     $prediction: TruthValuePowerSet( this == $pk.getPrediction() )
 
-    // A virtual concept can not be observed directly
-    /*$et: Set() from accumulate( $r: Relation( source isA Observation.class, target == $pk, type#ObservationType.getTypes( ) contains RelationType.PREDICTION ),
-                                                init( Set $set = new HashSet();  ),
-                                                action( $set.add( (Observation)$r.getSource() ); ),
+    $ets: Set( size > 0 ) from accumulate( $r: Relation( source isA PriorKnowledge.class, target == $pk, type == RelationType.SUBTYPE ),
+                                                init( $pk.getName();Set $set = Collections.synchronizedSet(EnumSet.noneOf(TruthValuePowerSet.class)); ),
+                                                action( $set.add( ((PriorKnowledge)$r.getSource()).getPrediction() ); ),
                                                 result( $set )
                                          )
-     */
-    $r: Relation( source isA PriorKnowledge.class, target == $pk, type == RelationType.SUBTYPE )
-
-    $child:  PriorKnowledge( this == $r.getSource(), prediction != $prediction )
-
-
-    $choice:  TruthValuePowerSet( this == Math.choice($child.getPrediction(), $prediction ), this != $prediction )
+    $choice: TruthValuePowerSet( this == Math.choice( $ets ), this != $prediction )
 
 
     $concepts: Set() from accumulate( $rel: Relation( source == $pk, target isA PriorKnowledge.class ),
@@ -237,8 +225,6 @@ rule "Prediction related to type of prior-knowledge" when
                                          )
 
 then
-    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Prediction @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-
     modify($pk){
         setPrediction(  $choice  )
     };
@@ -259,16 +245,6 @@ rule "Expectation related to type of prior-knowledge" when
     $prediction: TruthValuePowerSet( this == $pk.getPrediction() )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation() )
 
-
-    // A virtual concept can not be observed directly
-    /*$et: Set() from accumulate( $r: Relation( source isA Observation.class, target == $pk, type#ObservationType.getTypes( ) contains RelationType.EXPECTATION ),
-                                                init(Set $set = new HashSet();  ),
-                                                action( $set.add( (Observation)$r.getSource() ); ),
-                                                result( $set )
-                                         )
-    */
-
-
     $r: Relation( target isA PriorKnowledge.class, source == $pk, type == RelationType.SUBTYPE )
     $parent:  PriorKnowledge( this == $r.getTarget(), expectation != TruthValuePowerSet.F, expectation != $expectation )
 
@@ -287,7 +263,6 @@ rule "Expectation related to type of prior-knowledge" when
                                          )
 
 then
-    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Expectation @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     modify($pk){
         setExpectation(  $parent.getExpectation()  )
     };
@@ -315,7 +290,6 @@ rule "Expectation False related to type of prior-knowledge" when
                                          )
 
 then
-    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Expectation @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     modify($pk){
         setExpectation(  $parent.getExpectation()  )
     };

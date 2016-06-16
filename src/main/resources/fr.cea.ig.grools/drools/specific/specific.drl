@@ -81,7 +81,7 @@ rule "Prediction related to prior-knowledge with no child" when
     $pk: PriorKnowledge() @Watch( prediction, isSpecific )
     $prediction: TruthValuePowerSet( this == $pk.getPrediction() )
 
-    $et: Set() from accumulate( $r: Relation( source isA Observation.class, target == $pk, type#ObservationType.getTypes( ) contains RelationType.PREDICTION ),
+    $et: Set( size > 0 ) from accumulate( $r: Relation( source isA Observation.class, target == $pk, type#ObservationType.getTypes( ) contains RelationType.PREDICTION ),
                                                 init(Set $set = Collections.synchronizedSet(EnumSet.of(TruthValue.n));  ),
                                                 action($set.add( ((Observation)$r.getSource()).getTruthValue()); ),
                                                 result( $set )
@@ -99,7 +99,6 @@ rule "Prediction related to prior-knowledge with no child" when
                                          )
 
 then
-    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Prediction @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     modify($pk){
         setPrediction(  $result  )
     };
@@ -116,7 +115,7 @@ rule "Expectation related to prior-knowledge with no parent" when
     $prediction: TruthValuePowerSet( this == $pk.getPrediction() )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation() )
 
-    $et: Set() from accumulate( $r: Relation( source isA Observation.class, target == $pk, type#ObservationType.getTypes( ) contains RelationType.EXPECTATION ),
+    $et: Set( size > 0 ) from accumulate( $r: Relation( source isA Observation.class, target == $pk, type#ObservationType.getTypes( ) contains RelationType.EXPECTATION ),
                                                 init(Set $set =  Collections.synchronizedSet(EnumSet.of(TruthValue.n));  ),
                                                 action($set.add( ((Observation)$r.getSource()).getTruthValue()); ),
                                                 result( $set )
@@ -136,7 +135,6 @@ rule "Expectation related to prior-knowledge with no parent" when
 
 
 then
-    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Expectation @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     modify($pk){
         setExpectation(  $result  )
     };
@@ -161,7 +159,7 @@ rule "Prediction related to partition prior-knowledge without specific" when
                                          )
 
     $childs: Set() from accumulate( $r: Relation( source isA PriorKnowledge.class, target == $pk, type == RelationType.PART ),
-                                    init( System.out.println("********** "+$pk.getName()+" ***********"); Set $set = Collections.synchronizedSet(new HashSet()); ),
+                                    init( Set $set = Collections.synchronizedSet(new HashSet()); ),
                                     action(System.out.println($r.getSource()); $set.add($r.getSource());),
                                     result( $set )
                                    )
@@ -170,7 +168,7 @@ rule "Prediction related to partition prior-knowledge without specific" when
     forall( PriorKnowledge( isSpecific == false ) from $childs)
 
     $ets: Set( size > 0 ) from accumulate( $child: PriorKnowledge( ) from $childs,
-                                                init( System.out.println("********** "+$pk.getName()+"2 ***********"); Set $set = Collections.synchronizedSet(EnumSet.noneOf(TruthValueSet.class)); ),
+                                                init( $pk.getName(); Set $set = Collections.synchronizedSet(EnumSet.noneOf(TruthValueSet.class)); ),
                                                 action( $set.addAll( $child.getPrediction()
                                                                            .getTruthValuePowerSet() ); ),
                                                 result( $set )
@@ -186,8 +184,6 @@ rule "Prediction related to partition prior-knowledge without specific" when
                                          )
 
 then
-    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Prediction @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-
     modify($pk){
         setPrediction(  $result  )
     };
@@ -232,7 +228,6 @@ rule "Prediction related to partition prior-knowledge with specific" when
                                          )
 
 then
-    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Prediction @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     System.out.println( $et );
     System.out.println( $ets );
     System.out.println( $result );
@@ -262,7 +257,7 @@ rule "Expectation related to partition prior-knowledge" when
                                          )
 
     $ets: Set( size > 0 ) from accumulate( $r: Relation( target isA PriorKnowledge.class, source == $pk, type == RelationType.PART, ((PriorKnowledge)source).getIsDispensable() == false ),
-                                                init( System.out.println( $pk.getName() ); Set $set = Collections.synchronizedSet(EnumSet.noneOf(TruthValueSet.class)); ),
+                                                init( $pk.getName(); Set $set = Collections.synchronizedSet(EnumSet.noneOf(TruthValueSet.class)); ),
                                                 action( $set.addAll(
                                                                     ((PriorKnowledge)$r.getTarget()).getExpectation()
                                                                                                     .getTruthValuePowerSet() ); ),
@@ -280,7 +275,6 @@ rule "Expectation related to partition prior-knowledge" when
                                          )
 
 then
-    //System.out.println("@@@@@@@@@@@@@@@@@@@@@@@ Expectation @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     modify($pk){
         setExpectation(  $result  )
     };

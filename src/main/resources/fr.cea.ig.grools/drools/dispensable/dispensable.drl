@@ -176,9 +176,8 @@ rule "Expectation related to partition prior-knowledge" when
 
     $ets: Set( size > 0 ) from accumulate( $r: Relation( target isA PriorKnowledge.class, source == $pk, type == RelationType.PART, ((PriorKnowledge)source).getIsDispensable() == false ),
                                                 init( $pk.getName(); Set $set = Collections.synchronizedSet(EnumSet.noneOf(TruthValueSet.class)); ),
-                                                action( $set.addAll(
-                                                                    ((PriorKnowledge)$r.getTarget()).getExpectation()
-                                                                                                    .getTruthValuePowerSet() ); ),
+                                                action( $set.addAll( ((PriorKnowledge)$r.getTarget()).getExpectation()
+                                                                                                     .getTruthValuePowerSet() ); ),
                                                 result( $set )
                                          )
 

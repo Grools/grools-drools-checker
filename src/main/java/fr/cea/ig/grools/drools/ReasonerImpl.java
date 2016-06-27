@@ -389,6 +389,9 @@ public final class ReasonerImpl implements Reasoner {
         kieSession.fireAllRules();
         LOGGER.info("=================== expectation ===================");
         kieSession.getAgenda().getAgendaGroup( "expectation" ).setFocus();*/
+        kieSession.getAgenda().getAgendaGroup( "graph-fixer" ).setFocus();
+        kieSession.fireAllRules();
+        kieSession.getAgenda().getAgendaGroup( "MAIN" ).setFocus();
         kieSession.fireAllRules();
         kieSession.getAgenda().getAgendaGroup( "conclusion" ).setFocus();
         kieSession.fireAllRules();

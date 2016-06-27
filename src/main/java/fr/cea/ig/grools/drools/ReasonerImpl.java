@@ -8,6 +8,7 @@ import fr.cea.ig.grools.logic.TruthValuePowerSet;
 import fr.cea.ig.grools.logic.TruthValueSet;
 import fr.cea.ig.grools.fact.RelationType;
 import org.kie.api.conf.EventProcessingOption;
+import org.kie.api.runtime.rule.FactHandle;
 import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.Level;
@@ -236,15 +237,37 @@ public final class ReasonerImpl implements Reasoner {
 
     @Override
     public void delete(@NonNull final Object... data) {
-        Arrays.stream(data)
-              .forEach( (i) -> kieSession.delete( kieSession.getFactHandle( i ) ) );
+        for( final Object obj : data){
+            final FactHandle fact = kieSession.getFactHandle( obj );
+            if( fact != null ){
+                if( obj instanceof Concept) {
+                    final Concept concept = (Concept) obj;
+                    final Set<Relation> sources = getRelationsWithSource(concept);
+                    final Set<Relation> targets = getRelationsWithTarget(concept);
+                    delete(sources);
+                    delete(targets);
+                }
+                kieSession.delete( fact );
+            }
+        }
     }
 
 
     @Override
     public void delete(@NonNull final Collection<?> data) {
-        data.stream()
-            .forEach( (i) -> kieSession.delete( kieSession.getFactHandle( i ) ) );
+        for( final Object obj : data){
+            final FactHandle fact = kieSession.getFactHandle( obj );
+            if( fact != null ){
+                if( obj instanceof Concept) {
+                    final Concept concept = (Concept) obj;
+                    final Set<Relation> sources = getRelationsWithSource(concept);
+                    final Set<Relation> targets = getRelationsWithTarget(concept);
+                    delete(sources);
+                    delete(targets);
+                }
+                kieSession.delete( fact );
+            }
+        }
     }
 
     @Override

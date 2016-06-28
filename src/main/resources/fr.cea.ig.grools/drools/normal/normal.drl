@@ -49,6 +49,9 @@ import java.util.Set
 import java.util.HashSet
 import java.util.EnumSet;
 import java.util.Collections;
+import java.util.stream.Collectors;
+
+global ch.qos.logback.classic.Logger logger;
 
 dialect "java"
 
@@ -83,6 +86,7 @@ then
             setPrediction( priorknowledge.getPrediction())
         };
     }
+    logger.trace("Prior-knowledge "+$pk.getName()+" has no children. Prediction updated to "+$pk.getPrediction());
 end
 
 rule "Expectation related to prior-knowledge with no parent" when
@@ -120,6 +124,7 @@ then
             setExpectation( priorknowledge.getExpectation())
         };
     }
+    logger.trace("Prior-knowledge "+$pk.getName()+" has no parents. Expectation updated to "+$pk.getExpectation());
 end
 
 
@@ -160,6 +165,7 @@ then
             setPrediction( priorknowledge.getPrediction())
         };
     }
+    logger.trace("Prior-knowledge "+$pk.getName()+" has part "+ $concepts.stream().map( c -> ((PriorKnowledge)c).getName() ).collect(Collectors.joining(", ")) +". Prediction updated to "+$pk.getPrediction());
 end
 
 
@@ -202,6 +208,7 @@ then
             setExpectation( priorknowledge.getExpectation())
         };
     }
+    logger.trace("Prior-knowledge "+$pk.getName()+" has part "+ $concepts.stream().map( c -> ((PriorKnowledge)c).getName() ).collect(Collectors.joining(", ")) +". Expectation updated to "+$pk.getExpectation());
 end
 
 
@@ -234,6 +241,7 @@ then
             setPrediction( priorknowledge.getPrediction())
         };
     }
+    logger.trace("Prior-knowledge "+$pk.getName()+" has subtype "+ $concepts.stream().map( c -> ((PriorKnowledge)c).getName() ).collect(Collectors.joining(", ")) +". Prediction updated to "+$pk.getPrediction());
 end
 
 
@@ -272,6 +280,7 @@ then
             setExpectation( priorknowledge.getExpectation())
         };
     }
+    logger.trace("Prior-knowledge "+$pk.getName()+" has subtype "+ $concepts.stream().map( c -> ((PriorKnowledge)c).getName() ).collect(Collectors.joining(", ")) +". Expectation updated to "+$pk.getExpectation());
 end
 
 rule "Expectation False related to type of prior-knowledge" when
@@ -299,4 +308,5 @@ then
             setExpectation( priorknowledge.getExpectation())
         };
     }
+    logger.trace("Prior-knowledge "+$pk.getName()+" has subtype "+ $concepts.stream().map( c -> ((PriorKnowledge)c).getName() ).collect(Collectors.joining(", ")) +". Expectation updated to "+$pk.getExpectation());
 end

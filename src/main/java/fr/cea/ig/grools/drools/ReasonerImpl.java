@@ -133,6 +133,7 @@ public final class ReasonerImpl implements Reasoner {
                 root.setLevel( Level.TRACE);
                 break;
         }
+        kieSession.setGlobal("logger",LOGGER);
         kieSession.insert( mode );
         final EnumSet<TruthValuePowerSet> tvpset = EnumSet.allOf(TruthValuePowerSet.class);
         tvpset.forEach(kieSession::insert);
@@ -144,6 +145,8 @@ public final class ReasonerImpl implements Reasoner {
         observationTypes.forEach(kieSession::insert);
         final EnumSet<RelationType> relationTypes = EnumSet.allOf( RelationType.class);
         relationTypes.forEach(kieSession::insert);
+
+
     }
 
 

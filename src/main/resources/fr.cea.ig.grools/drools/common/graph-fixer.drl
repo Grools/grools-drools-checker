@@ -40,10 +40,13 @@ import fr.cea.ig.grools.fact.Relation;
 import fr.cea.ig.grools.fact.RelationType;
 import fr.cea.ig.grools.fact.RelationImpl;
 
+global ch.qos.logback.classic.Logger logger;
+
 rule "Remove duplicated relation" agenda-group "graph-fixer" when
     $relation1: Relation()
     $relation2: Relation( this != $relation1, source == $relation1.getSource(), target == $relation1.getTarget(), type == $relation1.getType() )
 then
+    logger.warn("A same pair of concept source/target("+$relation1.getSource().getName()+","+$relation2.getSource().getName()+") is linked twice by a same relation type. Removing extra relation.");
     retract( $relation2 );
 end
 
@@ -51,6 +54,7 @@ rule "Remove superfluous relation" agenda-group "graph-fixer" when
     $relation1: Relation( type == RelationType.SUBTYPE )
     $relation2: Relation( source == $relation1.getSource(), target == $relation1.getTarget(), type == RelationType.PART )
 then
+    logger.warn("A same pair of concept source/target("+$relation1.getSource().getName()+","+$relation2.getSource().getName()+") is linked by two different relation type. Removing PART relation.");
     retract( $relation2 );
 end
 
@@ -58,6 +62,7 @@ rule "Fixed subtype relation graph" agenda-group "graph-fixer" when
     $relation1: Relation( type == RelationType.SUBTYPE)
     $relation2: Relation( source == $relation1.getSource(), target != $relation1.getTarget(), type == RelationType.PART )
 then
-    insert( new RelationImpl( $relation2.getSource(), $relation2.getTarget(), RelationType.PART) );
+    logger.warn("The concept "+$relation1.getSource().getName()+" is subtype of " + $relation1.getTarget().getName() + " and part of "+$relation2.getTarget().getName()+". Then all concept type of "+$relation1.getTarget().getName()+" are part of " + $relation2.getTarget().getName() +".");
+    insert( new RelationImpl( $relation2.getSource(), $relation1.getTarget(), RelationType.PART) );
     retract( $relation2 );
 end

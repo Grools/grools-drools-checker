@@ -208,7 +208,7 @@ then
             setExpectation( priorknowledge.getExpectation())
         };
     }
-    logger.trace("Prior-knowledge "+$pk.getName()+" has part "+ $concepts.stream().map( c -> ((PriorKnowledge)c).getName() ).collect(Collectors.joining(", ")) +". Expectation updated to "+$pk.getExpectation());
+    logger.trace("Prior-knowledge "+$pk.getName()+" is part of another concept. Expectation updated to "+$pk.getExpectation());
 end
 
 

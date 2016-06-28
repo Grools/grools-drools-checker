@@ -58,11 +58,20 @@ then
     retract( $relation2 );
 end
 
-rule "Fixed subtype relation graph" agenda-group "graph-fixer" when
+rule "Fixed subtype relation graph 1" agenda-group "graph-fixer" when
     $relation1: Relation( type == RelationType.SUBTYPE)
     $relation2: Relation( source == $relation1.getSource(), target != $relation1.getTarget(), type == RelationType.PART )
 then
-    logger.warn("The concept "+$relation1.getSource().getName()+" is subtype of " + $relation1.getTarget().getName() + " and part of "+$relation2.getTarget().getName()+". Then all concept type of "+$relation1.getTarget().getName()+" are part of " + $relation2.getTarget().getName() +".");
-    insert( new RelationImpl( $relation2.getSource(), $relation1.getTarget(), RelationType.PART) );
+    logger.warn("The concept "+$relation1.getSource().getName()+" is subtype of " + $relation1.getTarget().getName() + " while "+ $relation1.getSource().getName()+" part of "+$relation2.getTarget().getName()+". Then all concept type of "+$relation1.getTarget().getName()+" are part of " + $relation2.getTarget().getName() +".");
+    insert( new RelationImpl( $relation1.getTarget(), $relation2.getTarget(), RelationType.PART) );
+    retract( $relation2 );
+end
+
+rule "Fixed subtype relation graph 2" agenda-group "graph-fixer" when
+    $relation1: Relation( type == RelationType.SUBTYPE)
+    $relation2: Relation( source != $relation1.getSource(), target == $relation1.getTarget(), type == RelationType.PART )
+then
+    logger.warn("The concept "+$relation2.getSource().getName()+" is part of " + $relation2.getTarget().getName() + " while "+ $relation2.getTarget().getName() +" has subtype "+$relation1.getSource().getName()+". Then all concept type of "+$relation1.getTarget().getName()+" are part of " + $relation2.getTarget().getName() +".");
+    insert( new RelationImpl( $relation2.getSource(), $relation1.getSource(), RelationType.PART) );
     retract( $relation2 );
 end

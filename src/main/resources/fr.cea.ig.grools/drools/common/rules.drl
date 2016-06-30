@@ -1,0 +1,84 @@
+/*
+* Copyright LABGeM (2016)
+*
+* author: Jonathan MERCIER
+*
+* Tis software is a computer program whose purpose is to annotate a complete genome.
+*
+* Tis software is governed by the CeCILL license under French law and
+* abiding by the rules of distribution of free software. You can use,
+* modify and/ or redistribute the software under the terms of the CeCILL
+* license as circulated by CEA, CNRS and INRIA at the following URL
+* "http://www.cecill.info".
+*
+* As a counterpart to the access to the source code and rights to copy,
+* modify and redistribute granted by the license, users are provided only
+* with a limited warranty and the software's author, the holder of the
+* economic rights, and the successive licensors have only limited
+* liability.
+*
+* In tis respect, the user's attention is drawn to the risks associated
+* with loading, using, modifying and/or developing or reproducing the
+* software by the user in light of its specific status of free software,
+* that may mean that it is complicated to manipulate, and that also
+* therefore means that it is reserved for developers and experienced
+* professionals having in-depth computer Concept. Users are therefore
+* encouraged to load and test the software's suitability as regards their
+* requirements in conditions enabling the security of their systems and/or
+* data to be ensured and, more generally, to use and operate it in the
+* same conditions as regards security.
+*
+* The fact that you are presently reading tis means that you have had
+* Concept of the CeCILL license and that you accept its terms.
+*/
+package fr.cea.ig.grools;
+
+import fr.cea.ig.grools.fact.Observation;
+import fr.cea.ig.grools.fact.ObservationType;
+import fr.cea.ig.grools.fact.Relation;
+import fr.cea.ig.grools.fact.RelationType;
+import fr.cea.ig.grools.logic.TruthValuePowerSet;
+import fr.cea.ig.grools.fact.PriorKnowledge;
+
+global ch.qos.logback.classic.Logger logger;
+
+dialect "java"
+
+rule "Any Prediction for leaf PriorKnowledge" when
+    $pk: PriorKnowledge( prediction != TruthValuePowerSet.N)
+    not( Relation( source isA PriorKnowledge, target == $pk ) )
+    not( Relation( source isA Observation, source#Observation.getType().getTypes( ) contains RelationType.PREDICTION ) )
+then
+    modify($pk){
+        setPrediction( TruthValuePowerSet.N )
+    };
+    logger.trace("PriorKnowledge "+$pk.getName()+" has any prediction");
+end
+
+
+rule "Any Expectation for top PriorKnowledge" when
+    $pk: PriorKnowledge( expectation != TruthValuePowerSet.N )
+    not( Relation( target isA PriorKnowledge, source == $pk) )
+    not( Relation( source isA Observation, source#Observation.getType().getTypes( ) contains RelationType.EXPECTATION, target == $pk) )
+then
+    modify($pk){
+        setExpectation( TruthValuePowerSet.N )
+    };
+    logger.trace("PriorKnowledge "+$pk.getName()+" has any expectation");
+end
+
+
+
+rule "Any Expectation for subtype PriorKnowledge" when
+    $child: PriorKnowledge( expectation == TruthValuePowerSet.n )
+    $rel: Relation( source == $child, target isA PriorKnowledge,
+                    target#PriorKnowledge.getExpectation() == TruthValuePowerSet.N )
+    forall( Relation( source isA PriorKnowledge, target == $rel.getTarget(), type == RelationType.SUBTYPE )
+            Relation( source#PriorKnowledge.getExpectation() == TruthValuePowerSet.N || source#PriorKnowledge.getExpectation() == TruthValuePowerSet.n )
+          )
+then
+    modify($child){
+        setExpectation( TruthValuePowerSet.N )
+    };
+    logger.trace("PriorKnowledge "+$child.getName()+" has any expectation");
+end

@@ -1,43 +1,47 @@
 package fr.cea.ig.grools.drools;
 
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import fr.cea.ig.grools.Mode;
+import fr.cea.ig.grools.Reasoner;
+import fr.cea.ig.grools.VariantMode;
+import fr.cea.ig.grools.Verbosity;
+import fr.cea.ig.grools.fact.Concept;
+import fr.cea.ig.grools.fact.Observation;
 import fr.cea.ig.grools.fact.ObservationType;
 import fr.cea.ig.grools.fact.PriorKnowledge;
+import fr.cea.ig.grools.fact.Relation;
+import fr.cea.ig.grools.fact.RelationType;
 import fr.cea.ig.grools.logic.TruthValue;
 import fr.cea.ig.grools.logic.TruthValuePowerSet;
 import fr.cea.ig.grools.logic.TruthValueSet;
-import fr.cea.ig.grools.fact.RelationType;
-import org.kie.api.conf.EventProcessingOption;
-import org.kie.api.runtime.rule.FactHandle;
-import org.slf4j.LoggerFactory;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.Level;
-
-import fr.cea.ig.grools.fact.Concept;
-import fr.cea.ig.grools.Mode;
-import fr.cea.ig.grools.fact.Observation;
-import fr.cea.ig.grools.Reasoner;
-import fr.cea.ig.grools.fact.Relation;
-import fr.cea.ig.grools.VariantMode;
-import fr.cea.ig.grools.Verbosity;
-
 import lombok.NonNull;
-
 import org.kie.api.KieBase;
 import org.kie.api.KieBaseConfiguration;
 import org.kie.api.KieServices;
+import org.kie.api.conf.EventProcessingOption;
 import org.kie.api.conf.MBeansOption;
 import org.kie.api.marshalling.Marshaller;
+import org.kie.api.marshalling.ObjectMarshallingStrategy;
+import org.kie.api.marshalling.ObjectMarshallingStrategyAcceptor;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
+import org.kie.api.runtime.KieSessionConfiguration;
 import org.kie.api.runtime.rule.EntryPoint;
+import org.kie.api.runtime.rule.FactHandle;
 import org.kie.api.runtime.rule.QueryResults;
 import org.kie.api.runtime.rule.QueryResultsRow;
 import org.kie.internal.KnowledgeBaseFactory;
 import org.kie.internal.marshalling.MarshallerFactory;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -429,5 +433,19 @@ public final class ReasonerImpl implements Reasoner {
     @Override
     public void close() throws Exception {
         kieSession.dispose();
+    }
+
+    public void save( final File file) throws IOException {
+        final ObjectMarshallingStrategyAcceptor acceptor    = MarshallerFactory.newClassFilterAcceptor(new String[] { "*.*" });
+        final ObjectMarshallingStrategy         strategy    = MarshallerFactory.newSerializeMarshallingStrategy(acceptor);
+        final Marshaller                        marshaller  = MarshallerFactory.newMarshaller(kbase, new ObjectMarshallingStrategy[] { strategy });
+        final FileOutputStream                  fos         = new FileOutputStream(file);
+        final ObjectOutputStream                oos         = new ObjectOutputStream(fos);
+        final KieSessionConfiguration           kconf       = kieSession.getSessionConfiguration();
+        oos.writeObject(kieSession.getKieBase());
+        oos.writeObject(kconf);
+        marshaller.marshall(fos, kieSession);
+        oos.close();
+        fos.close();
     }
 }

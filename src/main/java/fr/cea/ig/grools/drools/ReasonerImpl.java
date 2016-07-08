@@ -203,7 +203,7 @@ public final class ReasonerImpl implements Reasoner {
     }
 
 
-    private ReasonerImpl(@NonNull final KieBase kbase, @NonNull final KieSession kieSession, @NonNull final Mode mode ){
+    public ReasonerImpl(@NonNull final KieBase kbase, @NonNull final KieSession kieSession, @NonNull final Mode mode ){
         this.kbase      = kbase;
         this.kieSession = kieSession;
         this.mode       = mode;
@@ -435,7 +435,8 @@ public final class ReasonerImpl implements Reasoner {
         kieSession.dispose();
     }
 
-    public void save( final File file) throws IOException {
+    @Override
+    public void save( @NonNull final File file) throws IOException {
         final ObjectMarshallingStrategyAcceptor acceptor    = MarshallerFactory.newClassFilterAcceptor(new String[] { "*.*" });
         final ObjectMarshallingStrategy         strategy    = MarshallerFactory.newSerializeMarshallingStrategy(acceptor);
         final Marshaller                        marshaller  = MarshallerFactory.newMarshaller(kbase, new ObjectMarshallingStrategy[] { strategy });
@@ -444,6 +445,7 @@ public final class ReasonerImpl implements Reasoner {
         final KieSessionConfiguration           kconf       = kieSession.getSessionConfiguration();
         oos.writeObject(kieSession.getKieBase());
         oos.writeObject(kconf);
+        oos.writeObject(mode);
         marshaller.marshall(fos, kieSession);
         oos.close();
         fos.close();

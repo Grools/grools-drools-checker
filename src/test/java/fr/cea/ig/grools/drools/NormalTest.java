@@ -43,13 +43,14 @@ import fr.cea.ig.grools.fact.Observation;
 import fr.cea.ig.grools.fact.ObservationImpl;
 import fr.cea.ig.grools.fact.ObservationType;
 import fr.cea.ig.grools.fact.PriorKnowledge;
-import fr.cea.ig.grools.logic.TruthValue;
-import fr.cea.ig.grools.logic.TruthValuePowerSet;
 import fr.cea.ig.grools.fact.Relation;
 import fr.cea.ig.grools.fact.RelationImpl;
-import static org.junit.Assert.assertEquals;
+import fr.cea.ig.grools.logic.TruthValue;
+import fr.cea.ig.grools.logic.TruthValuePowerSet;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 
 /**
@@ -98,7 +99,7 @@ public class NormalTest {
         Cases.case4( reasoner );
         final PriorKnowledge pk1 = reasoner.getPriorKnowledge( "pk1" );
         assertEquals( TruthValuePowerSet.T, pk1.getPrediction() );
-        assertEquals( TruthValuePowerSet.N, pk1.getExpectation() );
+        assertEquals( TruthValuePowerSet.T, pk1.getExpectation() );
         reasoner.close();
     }
 
@@ -380,7 +381,77 @@ public class NormalTest {
         assertEquals( TruthValuePowerSet.T, cC.getPrediction() );
         assertEquals( TruthValuePowerSet.T, cA.getPrediction() );
 
+        reasoner.close();
+    }
 
+    @Test
+    public void case21() throws Exception{
+        Cases.case21( reasoner );
+        final PriorKnowledge cA = reasoner.getPriorKnowledge( "A" );
+        final PriorKnowledge cB = reasoner.getPriorKnowledge( "B" );
+        final PriorKnowledge cC = reasoner.getPriorKnowledge( "C" );
+        final PriorKnowledge cD = reasoner.getPriorKnowledge( "D" );
+        final PriorKnowledge cE = reasoner.getPriorKnowledge( "E" );
+        final PriorKnowledge cF = reasoner.getPriorKnowledge( "F" );
+
+        assertEquals( TruthValuePowerSet.T  , cF.getPrediction() );
+        assertEquals( TruthValuePowerSet.N  , cE.getPrediction() );
+        assertEquals( TruthValuePowerSet.F  , cD.getPrediction() );
+        assertEquals( TruthValuePowerSet.NT , cC.getPrediction() );
+        assertEquals( TruthValuePowerSet.NF , cB.getPrediction() );
+        assertEquals( TruthValuePowerSet.NT , cA.getPrediction() );
+
+        assertEquals( TruthValuePowerSet.N, cA.getExpectation() );
+        assertEquals( TruthValuePowerSet.n, cB.getExpectation() );
+        assertEquals( TruthValuePowerSet.NT, cC.getExpectation() );
+        assertEquals( TruthValuePowerSet.n, cD.getExpectation() );
+        assertEquals( TruthValuePowerSet.NT, cE.getExpectation() );
+        assertEquals( TruthValuePowerSet.NT, cF.getExpectation() );
+
+        reasoner.close();
+    }
+
+    @Test
+    public void case22() throws Exception{
+        Cases.case22( reasoner );
+        final PriorKnowledge cA = reasoner.getPriorKnowledge( "A" );
+        final PriorKnowledge cB = reasoner.getPriorKnowledge( "B" );
+        final PriorKnowledge cC = reasoner.getPriorKnowledge( "C" );
+        final PriorKnowledge cD = reasoner.getPriorKnowledge( "D" );
+        final PriorKnowledge cE = reasoner.getPriorKnowledge( "E" );
+        final PriorKnowledge cF = reasoner.getPriorKnowledge( "F" );
+
+        assertEquals( TruthValuePowerSet.T  , cF.getPrediction() );
+        assertEquals( TruthValuePowerSet.N  , cE.getPrediction() );
+        assertEquals( TruthValuePowerSet.F  , cD.getPrediction() );
+        assertEquals( TruthValuePowerSet.NT , cC.getPrediction() );
+        assertEquals( TruthValuePowerSet.NF , cB.getPrediction() );
+        assertEquals( TruthValuePowerSet.NT , cA.getPrediction() );
+
+        assertEquals( TruthValuePowerSet.N, cA.getExpectation() );
+        assertEquals( TruthValuePowerSet.F, cB.getExpectation() );
+        assertEquals( TruthValuePowerSet.N, cC.getExpectation() );
+        assertEquals( TruthValuePowerSet.F, cD.getExpectation() );
+        assertEquals( TruthValuePowerSet.NF, cE.getExpectation() );
+        assertEquals( TruthValuePowerSet.N, cF.getExpectation() );
+
+        reasoner.close();
+    }
+
+    @Test
+    public void case23() throws Exception{
+        Cases.case23( reasoner );
+        final PriorKnowledge cA = reasoner.getPriorKnowledge( "A" );
+        final PriorKnowledge cB = reasoner.getPriorKnowledge( "B" );
+        final PriorKnowledge cC = reasoner.getPriorKnowledge( "C" );
+
+        assertEquals( TruthValuePowerSet.T  , cC.getPrediction() );
+        assertEquals( TruthValuePowerSet.T  , cB.getPrediction() );
+        assertEquals( TruthValuePowerSet.T  , cA.getPrediction() );
+
+        assertEquals( TruthValuePowerSet.N, cA.getExpectation() );
+        assertEquals( TruthValuePowerSet.T, cB.getExpectation() );
+        assertEquals( TruthValuePowerSet.NT, cC.getExpectation() );
         reasoner.close();
     }
 }

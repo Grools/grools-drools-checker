@@ -20,7 +20,6 @@ import lombok.NonNull;
 import org.kie.api.KieBase;
 import org.kie.api.KieBaseConfiguration;
 import org.kie.api.KieServices;
-import org.kie.api.conf.EventProcessingOption;
 import org.kie.api.conf.MBeansOption;
 import org.kie.api.marshalling.Marshaller;
 import org.kie.api.marshalling.ObjectMarshallingStrategy;
@@ -33,6 +32,7 @@ import org.kie.api.runtime.rule.FactHandle;
 import org.kie.api.runtime.rule.QueryResults;
 import org.kie.api.runtime.rule.QueryResultsRow;
 import org.kie.internal.KnowledgeBaseFactory;
+import org.kie.internal.builder.conf.RuleEngineOption;
 import org.kie.internal.marshalling.MarshallerFactory;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +47,6 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -188,12 +187,18 @@ public final class ReasonerImpl implements Reasoner {
         final KieServices           ks          = KieServices.Factory.get();
         final KieContainer          kContainer  = ks.getKieClasspathContainer();
         final KieBaseConfiguration  kbaseConf   = ks.newKieBaseConfiguration();
-        kbaseConf.setProperty("drools.propertySpecific", "ALWAYS");
-        kbaseConf.setOption( EventProcessingOption.STREAM );
+        //final KieSessionConfiguration kieConf = ks.newKieSessionConfiguration();
+        //kieConf.setProperty("drools.propertySpecific", "ALWAYS");
+        //kbaseConf.setProperty("drools.propertySpecific", "ALWAYS");
+        //kbaseConf.setOption( EventProcessingOption.CLOUD );
+        //kbaseConf.setOption(MaxThreadsOption.get(8));
+        //kbaseConf.setOption( EventProcessingOption.STREAM );
+        kbaseConf.setOption(RuleEngineOption.PHREAK );
         if( verbosity.compare( Verbosity.MEDIUM ) >= 0 )
             kbaseConf.setOption( MBeansOption.ENABLED );
         final KieBase kbase       = kContainer.newKieBase(getKname(m), kbaseConf);
-        final KieSession kieSession = kbase.newKieSession();
+        //final KieSession kieSession = kbase.newKieSession(kieConf, null);
+        final KieSession kieSession = kbase.newKieSession( );
 
         this.kbase      = kbase;
         this.kieSession = kieSession;
@@ -319,7 +324,7 @@ public final class ReasonerImpl implements Reasoner {
     }
 
     @Override
-    public Relation getRelation( final Concept $source, final Concept $target, final RelationType $type ){
+    public Relation getRelation( final Concept $source, final Concept $target, final Enum<?> $type ){
         return query("getRelation", "$relation", Relation.class, $source, $target, $type);
     }
 
@@ -339,9 +344,9 @@ public final class ReasonerImpl implements Reasoner {
     }
 
     @Override
-    public Set<Relation> getRelationsWithTarget( final Concept $target ){
+    public Set<Relation> getRelationsWithTarget( final Concept concept ){
         final Set<Relation> relations = new HashSet<>();
-        query("getRelationsWithTarget", $target, "$relations", relations);
+        query("getRelationsWithTarget", concept, "$relations", relations);
         return relations;
     }
 
@@ -377,9 +382,11 @@ public final class ReasonerImpl implements Reasoner {
     @Override
     public Set<Relation> getSubGraph( final Concept concept ){
         final Set<Relation>         relations = getRelationsWithTarget( concept );
-        final List<Set<Relation>>   queue     = relations.stream()
-                                                         .map( relation -> getSubGraph( relation.getSource() ) )
-                                                         .collect( Collectors.toList() );
+        final Set<Set<Relation>>    queue     = relations.stream()
+                                                         .map(Relation::getSource)
+                                                         .distinct()
+                                                         .map(this::getSubGraph)
+                                                         .collect( Collectors.toSet() );
         for( final Set<Relation> children : queue)
                 relations.addAll( children );
         //relations.addAll( getSubGraph( relation.getSource() ) ); // throw ConcurrentModificationException
@@ -388,19 +395,12 @@ public final class ReasonerImpl implements Reasoner {
 
     @Override
     public void reasoning(){
-        /*LOGGER.info("=================== initialisation ===================");
-        kieSession.getAgenda().getAgendaGroup( "initialisation" ).setFocus();
-        kieSession.fireAllRules();
-        LOGGER.info("=================== prediction ===================");
-        kieSession.getAgenda().getAgendaGroup( "prediction" ).setFocus();
-        kieSession.fireAllRules();
-        LOGGER.info("=================== expectation ===================");
-        kieSession.getAgenda().getAgendaGroup( "expectation" ).setFocus();*/
-        kieSession.getAgenda().getAgendaGroup( "graph-fixer" ).setFocus();
-        kieSession.fireAllRules();
-        kieSession.getAgenda().getAgendaGroup( "MAIN" ).setFocus();
-        kieSession.fireAllRules();
         kieSession.getAgenda().getAgendaGroup( "conclusion" ).setFocus();
+        kieSession.getAgenda().getAgendaGroup( "prior-knowledge expectation" ).setFocus();
+        kieSession.getAgenda().getAgendaGroup( "prior-knowledge prediction" ).setFocus();
+        kieSession.getAgenda().getAgendaGroup( "specific" ).setFocus();
+        kieSession.getAgenda().getAgendaGroup( "observation" ).setFocus();
+        kieSession.getAgenda().getAgendaGroup( "graph-fixer" ).setFocus();
         kieSession.fireAllRules();
     }
 

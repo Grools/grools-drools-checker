@@ -46,7 +46,7 @@ import fr.cea.ig.grools.logic.TruthValueSet;
 import fr.cea.ig.grools.logic.TruthValuePowerSet;
 
 rule "Priorknowledge is Confirmed Presence"  agenda-group  "conclusion" when
-    $pk: PriorKnowledge( )
+    $pk: PriorKnowledge( conclusion != Conclusion.CONFIRMED_PRESENCE )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this in (T) )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this in (T, NT) )
 then
@@ -56,17 +56,17 @@ then
 end
 
 rule "Priorknowledge is Unexpected Absence" agenda-group  "conclusion" when
-    $pk: PriorKnowledge( )
+    $pk: PriorKnowledge( conclusion != Conclusion.UNEXPECTED_ABSENCE )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this in (F, FB, TF, NTFB, NTF, NFB, NF, TFB) )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this in (T, NT) )
 then
     modify( $pk ){
-        setConclusion( Conclusion.UNEXPECTED_ABSENCE)
+        setConclusion( Conclusion.UNEXPECTED_ABSENCE )
     };
 end
 
 rule "Priorknowledge is Contradictory Absence" agenda-group  "conclusion" when
-    $pk: PriorKnowledge( )
+    $pk: PriorKnowledge( conclusion != Conclusion.CONTRADICTORY_ABSENCE )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this in (B, TB, NTB, NB))
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this in (T, NT) )
 then
@@ -76,27 +76,27 @@ then
 end
 
 rule "Priorknowledge is Mising" agenda-group  "conclusion" when
-    $pk: PriorKnowledge( )
+    $pk: PriorKnowledge( conclusion != Conclusion.MISSING )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this in ( n, N, NT ) )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this in ( T, NT ) )
 then
     modify( $pk ){
-        setConclusion( Conclusion.MISSING)
+        setConclusion( Conclusion.MISSING )
     };
 end
 
 rule "Priorknowledge is Unexpected Presence" agenda-group  "conclusion" when
-    $pk: PriorKnowledge( )
+    $pk: PriorKnowledge( conclusion != Conclusion.UNEXPECTED_PRESENCE )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this == T )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this in (F, FB, TF, NTFB, NTF, NFB, NF, TFB) )
 then
     modify( $pk ){
-        setConclusion( Conclusion.UNEXPECTED_PRESENCE)
+        setConclusion( Conclusion.UNEXPECTED_PRESENCE )
     };
 end
 
 rule "Priorknowledge is Confirmed Absence"agenda-group  "conclusion"  when
-    $pk: PriorKnowledge( )
+    $pk: PriorKnowledge( conclusion != Conclusion.CONFIRMED_ABSENCE )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this in (F, FB, TF, NTFB, NTF, NFB, NF, TFB) )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this in (F, FB, TF, NTFB, NTF, NFB, NF, TFB) )
 then
@@ -106,76 +106,76 @@ then
 end
 
 rule "Priorknowledge is Contradictory Presence" agenda-group  "conclusion" when
-    $pk: PriorKnowledge( )
+    $pk: PriorKnowledge( conclusion !=  Conclusion.CONTRADICTORY_PRESENCE )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this in (B, TB, NTB, NB) )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this in (F, FB, TF, NTFB, NTF, NFB, NF, TFB) )
 then
     modify( $pk ){
-        setConclusion( Conclusion.CONTRADICTORY_PRESENCE)
+        setConclusion( Conclusion.CONTRADICTORY_PRESENCE )
     };
 end
 
 rule "Priorknowledge is Absent" agenda-group  "conclusion" when
-    $pk: PriorKnowledge( )
+    $pk: PriorKnowledge( conclusion != Conclusion.ABSENT )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this in (n, N, NT))
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this in (F, FB, TF, NTFB, NTF, NFB, NF, TFB) )
 then
     modify( $pk ){
-        setConclusion( Conclusion.ABSENT)
+        setConclusion( Conclusion.ABSENT )
     };
 end
 rule "Priorknowledge is Ambiguous Presence" agenda-group  "conclusion" when
-    $pk: PriorKnowledge( )
+    $pk: PriorKnowledge( conclusion != Conclusion.AMBIGUOUS_PRESENCE )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this == T)
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this in ( B, NB, NTB, TB)  )
 then
     modify( $pk ){
-        setConclusion( Conclusion.AMBIGUOUS_PRESENCE)
+        setConclusion( Conclusion.AMBIGUOUS_PRESENCE )
     };
 end
 
 rule "Priorknowledge is Ambiguous Absence" agenda-group  "conclusion" when
-    $pk: PriorKnowledge( )
+    $pk: PriorKnowledge( conclusion != Conclusion.AMBIGUOUS_ABSENCE )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this in (F, FB, TF, NTFB, NTF, NFB, NF, TFB) )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this in (B, TB, NTB, NB) )
 then
     modify( $pk ){
-        setConclusion( Conclusion.AMBIGUOUS_ABSENCE)
+        setConclusion( Conclusion.AMBIGUOUS_ABSENCE )
     };
 end
 
 rule "Priorknowledge is Ambiguous Contradiction" agenda-group  "conclusion" when
-    $pk: PriorKnowledge( )
+    $pk: PriorKnowledge( conclusion != Conclusion.AMBIGUOUS_CONTRADICTORY )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this in (B, TB, NTB, NB) )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this in (B, TB, NTB, NB) )
 then
     modify( $pk ){
-        setConclusion( Conclusion.AMBIGUOUS_CONTRADICTORY)
+        setConclusion( Conclusion.AMBIGUOUS_CONTRADICTORY )
     };
 end
 
 rule "Priorknowledge is Ambiguous" agenda-group  "conclusion" when
-    $pk: PriorKnowledge( )
+    $pk: PriorKnowledge( conclusion != Conclusion.AMBIGUOUS )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this in (n, N, NT ) )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this in (B, NB, NTB, TB )  )
 then
     modify( $pk ){
-        setConclusion( Conclusion.AMBIGUOUS)
+        setConclusion( Conclusion.AMBIGUOUS )
     };
 end
 
 rule "Priorknowledge is Unconfirmed Presence" agenda-group  "conclusion" when
-    $pk: PriorKnowledge( )
+    $pk: PriorKnowledge( conclusion != Conclusion.UNCONFIRMED_PRESENCE )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this  == T )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this in ( n, N ) )
 then
     modify( $pk ){
-        setConclusion( Conclusion.UNCONFIRMED_PRESENCE)
+        setConclusion( Conclusion.UNCONFIRMED_PRESENCE )
     };
 end
 
 rule "Priorknowledge is Unconfirmed Absence" agenda-group  "conclusion" when
-    $pk: PriorKnowledge( )
+    $pk: PriorKnowledge( conclusion != Conclusion.UNCONFIRMED_ABSENCE )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this in (F, FB, TF, NTFB, NTF, NFB, NF, TFB) )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this in ( n, N ) )
 then
@@ -185,7 +185,7 @@ then
 end
 
 rule "Priorknowledge is Unconfirmed Contradictory" agenda-group  "conclusion" when
-    $pk: PriorKnowledge( )
+    $pk: PriorKnowledge( conclusion != Conclusion.UNCONFIRMED_CONTRADICTORY )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this in ( B, TB, NTB, NB ))
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this in ( n, N ) )
 then
@@ -195,7 +195,7 @@ then
 end
 
 rule "Priorknowledge is Unexplained" agenda-group  "conclusion" when
-    $pk: PriorKnowledge( )
+    $pk: PriorKnowledge( conclusion != Conclusion.UNEXPLAINED )
     $prediction:  TruthValuePowerSet( this == $pk.getPrediction(),  this in (n, N, NT) )
     $expectation: TruthValuePowerSet( this == $pk.getExpectation(), this in (n, N) )
 then

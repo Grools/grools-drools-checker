@@ -104,7 +104,7 @@ query getRelationsWithSource( Concept $source )
 end
 
 query getRelationsWithTarget( Concept $target )
-    $relations :Set() from collect ( Relation( target == $target) )
+    $relations: Set() from collect ( Relation( target == $target  ) )
 end
 
 query getRelation( Concept $source, Concept $target, RelationType $type )
@@ -118,8 +118,8 @@ end
 
 query getObservationsRelatedToConcept( Concept $concept,  RelationType $relType )
     $out: Set() from accumulate( $r: Relation( source isA Observation.class, target == $concept,$relType memberOf type#ObservationType.getTypes( )),
-                                                       init    ( Set $set = new HashSet<>();  ),
-                                                       action  ( $set.add( (Observation)$r.getSource() ); ),
+                                                       init    ( Set $set = new HashSet();  ),
+                                                       action  ( $set.add( $r.getSource() ); ),
                                                        result  ( $set )
                                                 )
 end

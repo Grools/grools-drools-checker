@@ -40,6 +40,100 @@ import fr.cea.ig.grools.fact.RelationType;
 import fr.cea.ig.grools.logic.TruthValuePowerSet;
 import fr.cea.ig.grools.fact.PriorKnowledge;
 
+import java.util.Set;
+import java.util.HashSet;
+import java.util.EnumSet;
+
 global ch.qos.logback.classic.Logger logger;
 
 dialect "java"
+
+rule "Leaf prior-knowledge with no prediction" agenda-group  "observation" when
+    $pk: PriorKnowledge( prediction == TruthValuePowerSet.n )
+    not(    Relation(   source isA Observation.class,
+                        target == $pk,
+                        type ( == ObservationType.COMPUTATION || == ObservationType.ANNOTATION)
+                    )
+        )
+    not(    Relation(   source isA PriorKnowledge.class,
+                        target == $pk
+                    )
+        )
+then
+    modify( $pk ){
+        setPrediction( TruthValuePowerSet.N )
+    };
+end
+
+rule "Prediction set to prior-knowledge" agenda-group  "observation" when
+    $pk: PriorKnowledge()
+    $observations: Set( size > 0 ) from accumulate(     $rel: Relation( source isA Observation.class,
+                                                                        target == $pk,
+                                                                        type ( == ObservationType.COMPUTATION || == ObservationType.ANNOTATION) ),
+                                                        init  ( Set observations =  new HashSet();  ),
+                                                        action( observations.add( $rel.getSource() ); ),
+                                                        result( observations )
+                                                      )
+    $predictionSet:         TruthValueSet( this == Math.union( $observations ) )
+    $predictionSuperSet:    TruthValuePowerSet( this != $pk.getPrediction(),
+                                                this == TruthValuePowerSet.getByContent( EnumSet.of($predictionSet) ) )
+    $pk_parents: Set( ) from accumulate(   $rel: Relation(  target isA PriorKnowledge.class,
+                                                            source == $pk ),
+                                            init  ( Set set =  new HashSet();  ),
+                                            action( set.add(  $rel.getTarget() ); ),
+                                            result( set )
+                                         )
+then
+    modify( $pk ){
+        setPrediction( $predictionSuperSet )
+    };
+    for( final Object obj : $pk_parents){
+        final PriorKnowledge parent = (PriorKnowledge)obj;
+        modify(parent){ setPrediction( TruthValuePowerSet.n )};
+    }
+end
+
+rule "Top prior-knowledge with no expectation" agenda-group  "observation" when
+    $pk: PriorKnowledge( expectation == TruthValuePowerSet.n )
+    not(    Relation(   source isA Observation.class,
+                        target == $pk,
+                        type ( == ObservationType.EXPERIMENTATION || == ObservationType.ANNOTATION)
+                    )
+        )
+    not(    Relation(   target isA PriorKnowledge.class,
+                        source == $pk
+                    )
+        )
+then
+    modify( $pk ){
+        setExpectation( TruthValuePowerSet.N )
+    };
+end
+
+
+rule "Expectation set to prior-knowledge" agenda-group "observation" when
+    $pk: PriorKnowledge()
+    $observations: Set( size > 0 ) from accumulate(   $rel: Relation(   source isA Observation.class,
+                                                                        target == $pk,
+                                                                        type ( == ObservationType.EXPERIMENTATION || == ObservationType.ANNOTATION) ),
+                                                        init  ( Set observations =  new HashSet();  ),
+                                                        action( observations.add( $rel.getSource() ); ),
+                                                        result( observations )
+                                                     )
+    $expectationSet:        TruthValueSet( this == Math.union( $observations ) )
+    $expectationSuperSet:   TruthValuePowerSet( this != $pk.getExpectation(),
+                                                this == TruthValuePowerSet.getByContent( EnumSet.of($expectationSet) ) )
+    $pk_children: Set( ) from accumulate(  $rel: Relation(  source isA PriorKnowledge.class, target == $pk ),
+                                            init  ( Set set =  new HashSet();  ),
+                                            action( set.add(  $rel.getSource() ); ),
+                                            result( set )
+                                         )
+then
+    modify( $pk ){
+        setExpectation( $expectationSuperSet )
+    };
+    for( final Object obj : $pk_children){
+        final PriorKnowledge child = (PriorKnowledge)obj;
+        modify(child){ setExpectation( TruthValuePowerSet.n )};
+    }
+end

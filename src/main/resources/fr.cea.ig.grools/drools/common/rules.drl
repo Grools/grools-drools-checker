@@ -137,3 +137,21 @@ then
         modify(child){ setExpectation( TruthValuePowerSet.n )};
     }
 end
+
+
+rule "Prior-knowledge has any prediction" agenda-group  "finisher" when
+    $pk: PriorKnowledge( prediction == TruthValuePowerSet.n )
+then
+    modify($pk){
+        setPrediction( TruthValuePowerSet.N )
+    };
+end
+
+
+rule "Prior-knowledge has any expectation" agenda-group  "finisher" when
+    $pk: PriorKnowledge( expectation == TruthValuePowerSet.n )
+then
+    modify($pk){
+        setExpectation( TruthValuePowerSet.N )
+    };
+end

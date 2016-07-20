@@ -395,6 +395,7 @@ public final class ReasonerImpl implements Reasoner {
 
     @Override
     public void reasoning(){
+        kieSession.getAgenda().getAgendaGroup( "finisher" ).setFocus();
         kieSession.getAgenda().getAgendaGroup( "conclusion" ).setFocus();
         kieSession.getAgenda().getAgendaGroup( "prior-knowledge expectation" ).setFocus();
         kieSession.getAgenda().getAgendaGroup( "prior-knowledge prediction" ).setFocus();

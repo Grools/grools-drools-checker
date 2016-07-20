@@ -74,9 +74,9 @@ rule "Prediction set to prior-knowledge" agenda-group  "observation" when
                                                         action( observations.add( $rel.getSource() ); ),
                                                         result( observations )
                                                       )
-    $predictionSet:         TruthValueSet( this == Math.union( $observations ) )
+    $predictionSet:         TruthValueSet( this == Observation.union( $observations ) )
     $predictionSuperSet:    TruthValuePowerSet( this != $pk.getPrediction(),
-                                                this == TruthValuePowerSet.getByContent( EnumSet.of($predictionSet) ) )
+                                                this == TruthValueSet.union( $predictionSet ) )
     $pk_parents: Set( ) from accumulate(   $rel: Relation(  target isA PriorKnowledge.class,
                                                             source == $pk ),
                                             init  ( Set set =  new HashSet();  ),
@@ -120,9 +120,9 @@ rule "Expectation set to prior-knowledge" agenda-group "observation" when
                                                         action( observations.add( $rel.getSource() ); ),
                                                         result( observations )
                                                      )
-    $expectationSet:        TruthValueSet( this == Math.union( $observations ) )
+    $expectationSet:        TruthValueSet( this == Observation.union( $observations ) )
     $expectationSuperSet:   TruthValuePowerSet( this != $pk.getExpectation(),
-                                                this == TruthValuePowerSet.getByContent( EnumSet.of($expectationSet) ) )
+                                                this == TruthValueSet.union( $expectationSet ) )
     $pk_children: Set( ) from accumulate(  $rel: Relation(  source isA PriorKnowledge.class, target == $pk ),
                                             init  ( Set set =  new HashSet();  ),
                                             action( set.add(  $rel.getSource() ); ),

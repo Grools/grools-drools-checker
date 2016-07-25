@@ -49,6 +49,7 @@ plugins { id "me.champeau.gradle.jmh" version "0.3.0" }
 plugins { id "com.bmuschko.nexus"     version "2.3.1" }
 
 apply plugin: 'java'
+apply plugin: 'idea'
 apply plugin: 'plantuml'
 apply plugin: 'idea'
 apply plugin: 'maven'
@@ -70,8 +71,8 @@ repositories {
 }
 
 dependencies {
+    compileOnly group: 'org.projectlombok'  , name: 'lombok'                , version: lombokVersion
     compile     group: theGroup             , name: 'grools-checker'        , version: theVersion
-    compile     group: 'org.projectlombok'  , name: 'lombok'                , version: lombokVersion
     compile     group: 'ch.qos.logback'     , name: 'logback-classic'       , version: logbackVersion
     compile     group: 'org.drools'         , name: 'drools-compiler'       , version: droolsVersion
     compile     group: 'org.drools'         , name: 'knowledge-api'         , version: droolsVersion

@@ -55,7 +55,6 @@ import java.util.stream.Collectors;
  */
 public final class ReasonerImpl implements Reasoner {
 
-    private final static long serialVersionUID = 5808212875659211714L;
     private final static String KNAME   = "concept-reasoning";
     private final static Logger LOGGER  = (Logger) LoggerFactory.getLogger( ReasonerImpl.class );
 
@@ -401,6 +400,7 @@ public final class ReasonerImpl implements Reasoner {
         kieSession.getAgenda().getAgendaGroup( "prior-knowledge prediction" ).setFocus();
         kieSession.getAgenda().getAgendaGroup( "specific" ).setFocus();
         kieSession.getAgenda().getAgendaGroup( "observation" ).setFocus();
+        kieSession.getAgenda().getAgendaGroup( "observation set" ).setFocus();
         kieSession.getAgenda().getAgendaGroup( "graph-fixer" ).setFocus();
         kieSession.fireAllRules();
     }

@@ -12,14 +12,14 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 /**
- * DispensableTest
+ * NormalSpecificTest
  */
-public class SpecificTest {
+public class NormalSpecificTest {
     private Reasoner reasoner;
 
     @Before
     public void setUp(){
-        reasoner = new ReasonerImpl( Mode.SPECIFIC, Verbosity.HIGHT);
+        reasoner = new ReasonerImpl( Mode.NORMAL_SPECIFIC, Verbosity.HIGHT);
     }
 
     @Test
@@ -120,6 +120,43 @@ public class SpecificTest {
         assertEquals( TruthValuePowerSet.T, pkC.getPrediction() );
         assertEquals( TruthValuePowerSet.NT, pkB.getPrediction() );
         assertEquals( TruthValuePowerSet.T, pkA.getPrediction() );
+        reasoner.close();
+    }
+    @Test
+    public void case26() throws Exception {
+        Cases.case26( reasoner );
+        final PriorKnowledge pkA    = reasoner.getPriorKnowledge( "A" );
+        final PriorKnowledge pkB    = reasoner.getPriorKnowledge( "B" );
+        final PriorKnowledge pkC    = reasoner.getPriorKnowledge( "C" );
+        final PriorKnowledge pkD    = reasoner.getPriorKnowledge( "D" );
+        final PriorKnowledge pkE    = reasoner.getPriorKnowledge( "E" );
+        final PriorKnowledge pkE1   = reasoner.getPriorKnowledge( "E1" );
+        final PriorKnowledge pkE2   = reasoner.getPriorKnowledge( "E2" );
+        final PriorKnowledge pkE3   = reasoner.getPriorKnowledge( "E3" );
+        final PriorKnowledge pkE4   = reasoner.getPriorKnowledge( "E4" );
+        final PriorKnowledge pkE5   = reasoner.getPriorKnowledge( "E5" );
+        final PriorKnowledge pkE6   = reasoner.getPriorKnowledge( "E6" );
+        final PriorKnowledge pkF    = reasoner.getPriorKnowledge( "F" );
+        final PriorKnowledge pkF1   = reasoner.getPriorKnowledge( "F1" );
+        final PriorKnowledge pkF1a  = reasoner.getPriorKnowledge( "F1a" );
+        final PriorKnowledge pkF2   = reasoner.getPriorKnowledge( "F2" );
+        final PriorKnowledge pkF2a  = reasoner.getPriorKnowledge( "F2a" );
+        final PriorKnowledge pkF3   = reasoner.getPriorKnowledge( "F3" );
+        final PriorKnowledge pkF4   = reasoner.getPriorKnowledge( "F4" );
+        final PriorKnowledge pkF5   = reasoner.getPriorKnowledge( "F5" );
+        assertTrue( pkF1.getIsSpecific() );
+        assertTrue( pkF2.getIsSpecific() );
+        assertEquals( TruthValuePowerSet.T , pkF1.getPrediction() );
+        assertEquals( TruthValuePowerSet.T , pkF2.getPrediction() );
+        assertEquals( TruthValuePowerSet.N  , pkF3.getPrediction() );
+        assertEquals( TruthValuePowerSet.N  , pkF4.getPrediction() );
+        assertEquals( TruthValuePowerSet.N  , pkF5.getPrediction() );
+        assertEquals( TruthValuePowerSet.T , pkF.getPrediction() );
+        assertEquals( TruthValuePowerSet.T , pkD.getPrediction() );
+        assertEquals( TruthValuePowerSet.N  , pkE.getPrediction() );
+        assertEquals( TruthValuePowerSet.T , pkA.getPrediction() );
+        assertEquals( TruthValuePowerSet.N  , pkE.getExpectation() );
+        assertEquals( TruthValuePowerSet.B  , pkA.getExpectation() );
         reasoner.close();
     }
 }

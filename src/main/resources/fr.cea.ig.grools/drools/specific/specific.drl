@@ -36,6 +36,10 @@ import fr.cea.ig.grools.fact.Concept;
 import fr.cea.ig.grools.fact.Observation;
 import fr.cea.ig.grools.fact.ObservationType;
 import fr.cea.ig.grools.fact.PriorKnowledge;
+import fr.cea.ig.grools.fact.PredictionSet;
+import fr.cea.ig.grools.fact.ExpectationSet;
+import fr.cea.ig.grools.fact.Predictable;
+import fr.cea.ig.grools.fact.Expectable;
 import fr.cea.ig.grools.fact.Relation;
 import fr.cea.ig.grools.fact.RelationType;
 import fr.cea.ig.grools.fact.RelationImpl;
@@ -51,8 +55,8 @@ global ch.qos.logback.classic.Logger logger;
 
 dialect "java"
 
-rule "PriorKnowledge is specific to a given priorKnowledge" agenda-group "specific" when
-    $rel: Relation(source isA PriorKnowledge.class, target isA PriorKnowledge.class, type ( == RelationType.PART || == RelationType.SUBTYPE ) )
+rule "Predictable is specific to a given priorKnowledge" agenda-group "specific" when
+    $rel: Relation(source isA Predictable, target isA PriorKnowledge.class, type ( == RelationType.PART || == RelationType.SUBTYPE ) )
     $source: PriorKnowledge( this == $rel.source, isSpecific == false )
     $target: PriorKnowledge( this == $rel.target)
     not( Relation(source == $source, target isA PriorKnowledge.class && target != $target, type (== RelationType.PART || == RelationType.SUBTYPE  ) ) )
@@ -65,224 +69,13 @@ then
 end
 
 
-rule "PriorKnowledge is not specific to a given priorKnowledge" agenda-group "specific" when
-    $rel: Relation(source isA PriorKnowledge.class, target isA PriorKnowledge.class, type (== RelationType.PART || == RelationType.SUBTYPE  ) )
-    $source: PriorKnowledge( this == $rel.source, isSpecific == true )
+rule "Predictable is not specific to a given priorKnowledge" agenda-group "specific" when
+    $rel: Relation(source isA Predictable.class, target isA PriorKnowledge.class, type (== RelationType.PART || == RelationType.SUBTYPE  ) )
+    $source: Predictable( this == $rel.source, isSpecific == true )
     $target: PriorKnowledge( this == $rel.target)
     exists( Relation(source == $source, target isA PriorKnowledge.class && target != $target, type (== RelationType.PART || == RelationType.SUBTYPE  ) ) )
 then
     modify($source){
         setIsSpecific( false )
-    }
-end
-
-
-rule "Prior-knowledge has a group of part prior-knowledge with any specific predicted [prediction]" agenda-group "prior-knowledge prediction" when
-    $pk: PriorKnowledge()
-    $children: Set( size > 0 ) from accumulate(   $rel: Relation(   source isA PriorKnowledge.class,
-                                                                    target ==  $pk,
-                                                                    type   ==  RelationType.PART ),
-                                                    init  ( Set set =  new HashSet();  ),
-                                                    action( set.add( $rel.getSource() ); ),
-                                                    result( set )
-                                                 )
-
-    not( PriorKnowledge( isSpecific == true, prediction == TruthValuePowerSet.T ) from $children )
-
-    $directPrediction: TruthValuePowerSet() from accumulate(   $rel: Relation( source isA Observation.class,
-                                                                                target == $pk,
-                                                                                type ( == ObservationType.COMPUTATION || == ObservationType.ANNOTATION) ),
-                                                                init  ( Set set  =  new HashSet();  ),
-                                                                action( set.add( $rel.getSource() ); ),
-                                                                result( TruthValuePowerSet.getByContent( Observation.union( set ) ) )
-                                                            )
-
-    $result: TruthValuePowerSet( this != $pk.getPrediction() ) from accumulate(     $child: PriorKnowledge(  ) from $children,
-                                                                                    init  ( Set set  =  EnumSet.of( $directPrediction ); ),
-                                                                                    action( set.add( $child.getPrediction() ); ),
-                                                                                    result( TruthValuePowerSet.merge(set) )
-                                                                              )
-
-    $pk_parents: Set( ) from accumulate(   $rel: Relation(  target isA PriorKnowledge.class,
-                                                            source == $pk ),
-                                            init  ( Set set =  new HashSet();  ),
-                                            action( set.add(  $rel.getTarget() ); ),
-                                            result( set )
-                                         )
-then
-    modify( $pk ){
-        setPrediction($result)
-    };
-    for( final Object obj : $pk_parents){
-        final PriorKnowledge parent = (PriorKnowledge)obj;
-        update(parent);
-    }
-end
-
-
-rule "Prior-knowledge has a group of part prior-knowledge with at least one specific and predicted [prediction]" agenda-group "prior-knowledge prediction" when
-    $pk: PriorKnowledge()
-    $children: Set( size > 0 ) from accumulate(   $rel: Relation(   source isA PriorKnowledge.class,
-                                                                    target ==  $pk,
-                                                                    type   ==  RelationType.PART ),
-                                                    init  ( Set set =  new HashSet();  ),
-                                                    action( set.add( $rel.getSource() ); ),
-                                                    result( set )
-                                               )
-
-    exists( PriorKnowledge( isSpecific == true, prediction == TruthValuePowerSet.T ) from $children )
-
-    $directPrediction: TruthValuePowerSet() from accumulate(   $rel: Relation( source isA Observation.class,
-                                                                                target == $pk,
-                                                                                type ( == ObservationType.COMPUTATION || == ObservationType.ANNOTATION) ),
-                                                                init  ( Set set  =  new HashSet();  ),
-                                                                action( set.add( $rel.getSource() ); ),
-                                                                result( TruthValuePowerSet.getByContent( Observation.union( set ) ) )
-                                                            )
-
-    $result: TruthValuePowerSet( this != $pk.getPrediction() ) from accumulate(  $child: PriorKnowledge( ) from $children,
-                                                                    init  ( Set set  =  EnumSet.of( $directPrediction ); ),
-                                                                    action( if(  $child.getPrediction() != TruthValuePowerSet.N && $child.getPrediction() != TruthValuePowerSet.NT ){
-                                                                                set.add( $child.getPrediction() );
-                                                                            } ),
-                                                                    result( TruthValuePowerSet.merge(set) )
-                                                                 )
-
-    $pk_parents: Set( ) from accumulate(   $rel: Relation(  target isA PriorKnowledge.class,
-                                                            source == $pk ),
-                                            init  ( Set set =  new HashSet();  ),
-                                            action( set.add(  $rel.getTarget() ); ),
-                                            result( set )
-                                         )
-then
-    modify( $pk ){
-        setPrediction($result)
-    };
-    for( final Object obj : $pk_parents){
-        final PriorKnowledge parent = (PriorKnowledge)obj;
-        update(parent);
-    }
-end
-
-
-rule "Prior-knowledge is part of another prior-knowledge [expectation]" agenda-group "prior-knowledge expectation" when
-    $pk: PriorKnowledge( prediction != TruthValuePowerSet.n )
-    $parents: TruthValuePowerSet( size > 0 ) from accumulate(   $rel: Relation(   target  isA PriorKnowledge.class,
-                                                                        source  ==  $pk,
-                                                                        type    ==  RelationType.PART ),
-                                                        init  ( Set set =  new HashSet();  ),
-                                                        action( set.add( $rel.getTarget() );  ),
-                                                        result( set )
-                                                     )
-    $result: TruthValuePowerSet( this != $pk.getExpectation() ) from accumulate(    $parent: PriorKnowledge( ) from $parents,
-                                                                                    init  ( Set set = EnumSet.of( $pk.getExpectation() );  ),
-                                                                                    action( set.add( $parent.getExpectation() ); ),
-                                                                                    result( TruthValuePowerSet.merge(set) )
-                                                                                 )
-    $pk_children: Set( ) from accumulate(  $rel: Relation(  source isA PriorKnowledge.class, target == $pk ),
-                                            init  ( Set set =  new HashSet();  ),
-                                            action( set.add(  $rel.getSource() ); ),
-                                            result( set )
-                                         )
-then
-    modify( $pk ){
-        setExpectation($result)
-    };
-    for( final Object obj : $pk_children){
-        final PriorKnowledge child = (PriorKnowledge)obj;
-        update(child);
-    }
-end
-
-
-rule "Prior-knowledge has subtype  prior-knowledge [prediction]" agenda-group "prior-knowledge prediction" when
-    $pk: PriorKnowledge(  )
-    $pk_children: Set( size > 0) from accumulate(   $rel: Relation( source isA PriorKnowledge.class,
-                                                                    target == $pk,
-                                                                    type == RelationType.SUBTYPE ),
-                                                    init  ( Set set =  new HashSet();  ),
-                                                    action( set.add( $rel.getSource() ); ),
-                                                    result( set )
-                                                 )
-    $predictionFromChildren: TruthValuePowerSet() from accumulate(  $child: PriorKnowledge( ) from $pk_children,
-                                                                    init  ( Set set  =  EnumSet.noneOf( TruthValuePowerSet.class );  ),
-                                                                    action( set.add( $child.getPrediction() ); ),
-                                                                    result( TruthValuePowerSet.choice(set) )
-                                                                 )
-    $directPrediction: TruthValuePowerSet() from accumulate(   $rel: Relation( source isA Observation.class,
-                                                                                target == $pk,
-                                                                                type ( == ObservationType.COMPUTATION || == ObservationType.ANNOTATION) ),
-                                                                init  ( Set set  =  new HashSet();  ),
-                                                                action( set.add( $rel.getSource() ); ),
-                                                                result( TruthValuePowerSet.getByContent( Observation.union( set ) ) )
-                                                             )
-    $result: TruthValuePowerSet( this != $pk.getPrediction(), this ==  TruthValuePowerSet.merge( $predictionFromChildren, $directPrediction) )
-
-    $pk_parents: Set( ) from accumulate(   $rel: Relation(  target isA PriorKnowledge.class, source == $pk ),
-                                            init  ( Set set =  new HashSet();  ),
-                                            action( set.add(  $rel.getTarget() );),
-                                            result( set )
-                                         )
-then
-    modify( $pk ){
-        setPrediction($result)
-    };
-    for( final Object obj : $pk_parents){
-        final PriorKnowledge parent = (PriorKnowledge)obj;
-        update(parent);
-    }
-end
-
-
-rule "Prior-knowledge is subtype of another prior-knowledge [expectation]" agenda-group "prior-knowledge expectation" when
-    $pk: PriorKnowledge( prediction != TruthValuePowerSet.n )
-    $relation: Relation(    target  isA PriorKnowledge.class,
-                            source  ==  $pk,
-                            type    ==  RelationType.SUBTYPE )
-    $parent: PriorKnowledge( this == $relation.getTarget(), expectation (!= TruthValuePowerSet.F && != $pk.getExpectation() && != TruthValuePowerSet.n ) )
-    $parent_children: Set( ) from accumulate(  $rel: Relation(  source isA PriorKnowledge.class, target == $parent ),
-                                                init  ( Set set =  new HashSet();  ),
-                                                action( set.add(  $rel.getSource() ); ),
-                                                result( set )
-                                             )
-    forall( PriorKnowledge( prediction.getTruth() <= $pk.getPrediction().getTruth() ) from $parent_children )
-    $result: TruthValuePowerSet(    this != $pk.getExpectation(),
-                                    this ==  TruthValuePowerSet.merge( $pk.getExpectation(), $parent.getExpectation() ) )
-    $pk_children: Set( ) from accumulate(  $rel: Relation(  source isA PriorKnowledge.class, target == $pk ),
-                                            init  ( Set set =  new HashSet();  ),
-                                            action( set.add(  $rel.getSource() ); ),
-                                            result( set )
-                                         )
-then
-    modify( $pk ){
-        setExpectation($result)
-    };
-    for( final Object obj : $pk_children){
-        final PriorKnowledge child = (PriorKnowledge)obj;
-        update(child);
-    }
-end
-
-
-
-rule "Prior-knowledge is subtype of an not expected prior-knowledge [expectation]" agenda-group "prior-knowledge expectation" when
-    $pk: PriorKnowledge( expectation != TruthValuePowerSet.F )
-    $relation: Relation(    target  isA PriorKnowledge.class,
-                            source  ==  $pk,
-                            type    ==  RelationType.SUBTYPE )
-    $parent: PriorKnowledge( this == $relation.getTarget(), expectation == TruthValuePowerSet.F)
-
-    $pk_children: Set( ) from accumulate(  $rel: Relation(  source isA PriorKnowledge.class, target == $pk ),
-                                            init  ( Set set =  new HashSet();  ),
-                                            action( set.add(  $rel.getSource() ); ),
-                                            result( set )
-                                         )
-then
-    modify( $pk ){
-        setExpectation( TruthValuePowerSet.F )
-    };
-    for( final Object obj : $pk_children){
-        final PriorKnowledge child = (PriorKnowledge)obj;
-        update(child);
     }
 end

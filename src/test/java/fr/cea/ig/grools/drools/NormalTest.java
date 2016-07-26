@@ -363,10 +363,10 @@ public class NormalTest {
         assertEquals( TruthValuePowerSet.NT , cA.getPrediction() );
 
         assertEquals( TruthValuePowerSet.T, cA.getExpectation() );
-        assertEquals( TruthValuePowerSet.n, cB.getExpectation() );
+        assertEquals( TruthValuePowerSet.N, cB.getExpectation() );
         assertEquals( TruthValuePowerSet.T, cC.getExpectation() );
-        assertEquals( TruthValuePowerSet.n, cD.getExpectation() );
-        assertEquals( TruthValuePowerSet.T, cE.getExpectation() );
+        assertEquals( TruthValuePowerSet.N, cD.getExpectation() );
+        assertEquals( TruthValuePowerSet.NT, cE.getExpectation() );
         assertEquals( TruthValuePowerSet.T, cF.getExpectation() );
 
         Observation o = ObservationImpl.builder()
@@ -402,11 +402,11 @@ public class NormalTest {
         assertEquals( TruthValuePowerSet.NT , cA.getPrediction() );
 
         assertEquals( TruthValuePowerSet.N, cA.getExpectation() );
-        assertEquals( TruthValuePowerSet.n, cB.getExpectation() );
-        assertEquals( TruthValuePowerSet.NT, cC.getExpectation() );
-        assertEquals( TruthValuePowerSet.n, cD.getExpectation() );
+        assertEquals( TruthValuePowerSet.N, cB.getExpectation() );
+        assertEquals( TruthValuePowerSet.T, cC.getExpectation() );
+        assertEquals( TruthValuePowerSet.N, cD.getExpectation() );
         assertEquals( TruthValuePowerSet.NT, cE.getExpectation() );
-        assertEquals( TruthValuePowerSet.NT, cF.getExpectation() );
+        assertEquals( TruthValuePowerSet.T, cF.getExpectation() );
 
         reasoner.close();
     }

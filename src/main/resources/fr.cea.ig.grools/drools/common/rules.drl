@@ -35,7 +35,12 @@ package fr.cea.ig.grools;
 
 import fr.cea.ig.grools.fact.Observation;
 import fr.cea.ig.grools.fact.ObservationType;
+import fr.cea.ig.grools.fact.ExpectationSet;
+import fr.cea.ig.grools.fact.ExpectationSetImpl;
+import fr.cea.ig.grools.fact.PredictionSet;
+import fr.cea.ig.grools.fact.PredictionSetImpl;
 import fr.cea.ig.grools.fact.Relation;
+import fr.cea.ig.grools.fact.RelationImpl;
 import fr.cea.ig.grools.fact.RelationType;
 import fr.cea.ig.grools.logic.TruthValuePowerSet;
 import fr.cea.ig.grools.fact.PriorKnowledge;
@@ -48,110 +53,123 @@ global ch.qos.logback.classic.Logger logger;
 
 dialect "java"
 
-rule "Leaf prior-knowledge with no prediction" agenda-group  "observation" when
-    $pk: PriorKnowledge( prediction == TruthValuePowerSet.n )
-    not(    Relation(   source isA Observation.class,
-                        target == $pk,
-                        type ( == ObservationType.COMPUTATION || == ObservationType.ANNOTATION)
-                    )
-        )
-    not(    Relation(   source isA PriorKnowledge.class,
-                        target == $pk
-                    )
-        )
+rule "Create a prediction set related to a prior-knowledge" agenda-group  "observation set" when
+    $pk     : PriorKnowledge()
+    not( Relation( source isA PredictionSet, target == $pk, type == RelationType.PREDICTION ) )
 then
+    PredictionSet pred = new PredictionSetImpl( "predictions-"+$pk.getName(),
+                                                "GROOLS",
+                                                $pk.getLabel(),
+                                                "",
+                                                TruthValueSet.N );
+    Relation predToPk = new RelationImpl( pred, $pk, RelationType.PREDICTION );
+    insert( pred );
+    insert( predToPk );
     modify( $pk ){
-        setPrediction( TruthValuePowerSet.N )
-    };
-end
-
-rule "Prediction set to prior-knowledge" agenda-group  "observation" when
-    $pk: PriorKnowledge()
-    $observations: Set( size > 0 ) from accumulate(     $rel: Relation( source isA Observation.class,
-                                                                        target == $pk,
-                                                                        type ( == ObservationType.COMPUTATION || == ObservationType.ANNOTATION) ),
-                                                        init  ( Set observations =  new HashSet();  ),
-                                                        action( observations.add( $rel.getSource() ); ),
-                                                        result( observations )
-                                                      )
-    $predictionSet:         TruthValueSet( this == Observation.union( $observations ) )
-    $predictionSuperSet:    TruthValuePowerSet( this != $pk.getPrediction(),
-                                                this == TruthValueSet.union( $predictionSet ) )
-    $pk_parents: Set( ) from accumulate(   $rel: Relation(  target isA PriorKnowledge.class,
-                                                            source == $pk ),
-                                            init  ( Set set =  new HashSet();  ),
-                                            action( set.add(  $rel.getTarget() ); ),
-                                            result( set )
-                                         )
-then
-    modify( $pk ){
-        setPrediction( $predictionSuperSet )
-    };
-    for( final Object obj : $pk_parents){
-        final PriorKnowledge parent = (PriorKnowledge)obj;
-        modify(parent){ setPrediction( TruthValuePowerSet.n )};
+         setPrediction( TruthValuePowerSet.N )
     }
 end
 
-rule "Top prior-knowledge with no expectation" agenda-group  "observation" when
-    $pk: PriorKnowledge( expectation == TruthValuePowerSet.n )
-    not(    Relation(   source isA Observation.class,
-                        target == $pk,
-                        type ( == ObservationType.EXPERIMENTATION || == ObservationType.ANNOTATION)
-                    )
-        )
-    not(    Relation(   target isA PriorKnowledge.class,
-                        source == $pk
-                    )
-        )
+rule "Create a expectation set related to a prior-knowledge" agenda-group  "observation set" when
+    $pk     : PriorKnowledge()
+    not( Relation( target isA ExpectationSet, source == $pk, type == RelationType.EXPECTATION ) )
+
 then
+    ExpectationSet exp = new ExpectationSetImpl( "expectations-"+$pk.getName(),
+                                                "GROOLS",
+                                                $pk.getLabel(),
+                                                "",
+                                                TruthValueSet.N );
+    Relation expToPk = new RelationImpl( $pk, exp, RelationType.EXPECTATION );
+    insert( exp );
+    insert( expToPk );
     modify( $pk ){
         setExpectation( TruthValuePowerSet.N )
     };
 end
 
-
-rule "Expectation set to prior-knowledge" agenda-group "observation" when
-    $pk: PriorKnowledge()
-    $observations: Set( size > 0 ) from accumulate(   $rel: Relation(   source isA Observation.class,
-                                                                        target == $pk,
-                                                                        type ( == ObservationType.EXPERIMENTATION || == ObservationType.ANNOTATION) ),
-                                                        init  ( Set observations =  new HashSet();  ),
-                                                        action( observations.add( $rel.getSource() ); ),
-                                                        result( observations )
-                                                     )
-    $expectationSet:        TruthValueSet( this == Observation.union( $observations ) )
-    $expectationSuperSet:   TruthValuePowerSet( this != $pk.getExpectation(),
-                                                this == TruthValueSet.union( $expectationSet ) )
-    $pk_children: Set( ) from accumulate(  $rel: Relation(  source isA PriorKnowledge.class, target == $pk ),
-                                            init  ( Set set =  new HashSet();  ),
-                                            action( set.add(  $rel.getSource() ); ),
-                                            result( set )
-                                         )
+rule "Computation need to be linked to a prediction set" agenda-group  "observation set" when
+    $pk         : PriorKnowledge()
+    $predToPk   : Relation( source isA PredictionSet, target == $pk, type == RelationType.PREDICTION )
+    $obsToPk    : Relation(   source    isA Observation,
+                              target    == $pk,
+                              type      == ObservationType.COMPUTATION )
 then
+    insert( new RelationImpl( $obsToPk.getSource(), $predToPk.getSource(), $obsToPk.getType() ) );
+    retract( $obsToPk );
+    update( $pk );
+end
+
+rule "Experimentation need to be linked to an expectation set" agenda-group  "observation set" when
+    $pk         : PriorKnowledge()
+    $expToPk    : Relation( target isA ExpectationSet, source == $pk, type == RelationType.EXPECTATION )
+    $obsToPk    : Relation(   source    isA Observation,
+                              target    == $pk,
+                              type      == ObservationType.EXPERIMENTATION )
+then
+    insert( new RelationImpl( $obsToPk.getSource(), $expToPk.getTarget(), $obsToPk.getType() ) );
+    retract( $obsToPk );
+    update( $pk );
+end
+
+rule "Annotation need to be linked to a prediction set and an expectation set" agenda-group  "observation set" when
+    $pk         : PriorKnowledge()
+    $predToPk   : Relation( source isA PredictionSet,  target == $pk, type == RelationType.PREDICTION )
+    $expToPk    : Relation( target isA ExpectationSet, source == $pk, type == RelationType.EXPECTATION )
+    $obsToPk    : Relation(   source    isA Observation,
+                              target    == $pk,
+                              type      == ObservationType.ANNOTATION )
+then
+    insert( new RelationImpl( $obsToPk.getSource(), $predToPk.getSource(), $obsToPk.getType() ) );
+    insert( new RelationImpl( $obsToPk.getSource(), $expToPk.getTarget(), $obsToPk.getType() ) );
+    retract( $obsToPk );
+end
+
+rule "Prior-knowledge has prediction set" agenda-group  "observation" when
+    $pk         : PriorKnowledge()
+    $predToPk   : Relation( source isA PredictionSet, target == $pk, type == RelationType.PREDICTION )
+    $pred       : PredictionSet( this == $predToPk.getSource() )
+    $obsToPk    : Set( ) from collect( Relation(    source isA Observation.class,
+                                                    target == $pred,
+                                                    type ( == ObservationType.COMPUTATION || == ObservationType.ANNOTATION ) ) )
+    $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
+                                        init  ( Set set =  new HashSet(); ),
+                                        action( set.add( $rel.getSource() ); ),
+                                        result( set ) )
+    $directPrediction: TruthValueSet( this != $pred.getPrediction() ) from accumulate(   $obs: Observation( ) from $obsSet ,
+                                                                init  ( EnumSet set =  EnumSet.noneOf(TruthValue.class);  ),
+                                                                action( set.add( $obs.getTruthValue() ); ),
+                                                                result( TruthValue.union( set ) ) )
+then
+    modify( $pred ){
+         setPrediction( $directPrediction )
+    }
     modify( $pk ){
-        setExpectation( $expectationSuperSet )
-    };
-    for( final Object obj : $pk_children){
-        final PriorKnowledge child = (PriorKnowledge)obj;
-        modify(child){ setExpectation( TruthValuePowerSet.n )};
+         setPrediction( TruthValueSet.union( $directPrediction ) )
     }
 end
 
+rule "Prior-knowledge has expectation set" agenda-group  "observation" when
+    $pk        : PriorKnowledge()
+    $expToPk   : Relation( target isA ExpectationSet.class, source == $pk, type == RelationType.EXPECTATION )
+    $exp       : ExpectationSet( this == $expToPk.getTarget() )
+    $obsToPk : Set( ) from collect( Relation(  source isA Observation.class,
+                                                        target == $exp,
+                                                        type ( == ObservationType.EXPERIMENTATION || == ObservationType.ANNOTATION ) ) )
+    $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
+                                            init  ( Set set =  new HashSet(); ),
+                                            action( set.add( $rel.getSource() ); ),
+                                            result( set ) )
+    $directExpectation: TruthValueSet( this != $exp.getExpectation() ) from accumulate(   $obs: Observation( ) from $obsSet ,
+                                                                init  ( EnumSet set =  EnumSet.noneOf(TruthValue.class);  ),
+                                                                action( set.add( $obs.getTruthValue() ); ),
+                                                                result( TruthValue.union( set ) ) )
 
-rule "Prior-knowledge has any prediction" agenda-group  "finisher" when
-    $pk: PriorKnowledge( prediction == TruthValuePowerSet.n )
 then
-    modify($pk){
-        setPrediction( TruthValuePowerSet.N )
+    modify( $exp ){
+        setExpectation( $directExpectation )
     };
-end
-
-
-rule "Prior-knowledge has any expectation" agenda-group  "finisher" when
-    $pk: PriorKnowledge( expectation == TruthValuePowerSet.n )
-then
-    modify($pk){
-        setExpectation( TruthValuePowerSet.N )
+    modify( $pk ){
+        setExpectation( TruthValueSet.union(  $directExpectation ) )
     };
 end

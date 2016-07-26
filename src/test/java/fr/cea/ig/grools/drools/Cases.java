@@ -43,10 +43,10 @@ import fr.cea.ig.grools.fact.ObservationImpl;
 import fr.cea.ig.grools.fact.ObservationType;
 import fr.cea.ig.grools.fact.PriorKnowledge;
 import fr.cea.ig.grools.fact.PriorKnowledgeImpl;
-import fr.cea.ig.grools.fact.Relation;
-import fr.cea.ig.grools.fact.RelationImpl;
-import fr.cea.ig.grools.fact.RelationType;
 import fr.cea.ig.grools.logic.TruthValue;
+import fr.cea.ig.grools.fact.RelationImpl;
+import fr.cea.ig.grools.fact.Relation;
+import fr.cea.ig.grools.fact.RelationType;
 import lombok.NonNull;
 
 /**
@@ -884,32 +884,32 @@ class Cases {
         final Relation relationDB = new RelationImpl( nD, nB, RelationType.PART);
         final Observation opB1 = ObservationImpl.builder()
                                                 .type(ObservationType.COMPUTATION)
-                                                .name("opB")
+                                                .name("opB1")
                                                 .truthValue(TruthValue.t )
                                                 .build();
         final Observation opB2 = ObservationImpl.builder()
                                                 .type(ObservationType.COMPUTATION)
-                                                .name("opB")
+                                                .name("opB2")
                                                 .truthValue(TruthValue.t )
                                                 .build();
         final Observation opC1 = ObservationImpl.builder()
                                                 .type(ObservationType.COMPUTATION)
-                                                .name("opC")
+                                                .name("opC1")
                                                 .truthValue(TruthValue.t )
                                                 .build();
         final Observation opC2 = ObservationImpl.builder()
                                                 .type(ObservationType.COMPUTATION)
-                                                .name("opC")
+                                                .name("opC2")
                                                 .truthValue(TruthValue.t )
                                                 .build();
         final Observation opC3 = ObservationImpl.builder()
                                                 .type(ObservationType.COMPUTATION)
-                                                .name("opC")
+                                                .name("opC3")
                                                 .truthValue(TruthValue.t )
                                                 .build();
         final Observation oeA1 = ObservationImpl.builder()
                                                 .type(ObservationType.EXPERIMENTATION)
-                                                .name("opA")
+                                                .name("oeA")
                                                 .truthValue(TruthValue.t )
                                                 .build();
         final Relation opB1ToB = new RelationImpl( opB1, nB );
@@ -957,6 +957,7 @@ class Cases {
         reasoner.insert( relationEB, relationFB, relationFC, relationFD, relationGC, relationHB, relationHC, relationHD,
                          relationIB, relationIC, relationID, relationJB, relationJC, relationJD, relationKD);
 
+
         final Observation oeA1 = ObservationImpl.builder()
                                                 .type(ObservationType.EXPERIMENTATION)
                                                 .name("opA")
@@ -994,5 +995,98 @@ class Cases {
         reasoner.insert(opI1, opI1ToI);
 
         reasoner.reasoning();
+    }
+
+    static void case26( @NonNull final Reasoner reasoner ) {
+        final PriorKnowledge nA = PriorKnowledgeImpl.builder().name("A").build();
+        reasoner.insert(nA);
+
+        final PriorKnowledge nB = PriorKnowledgeImpl.builder().name("B").build();
+        final PriorKnowledge nC = PriorKnowledgeImpl.builder().name("C").build();
+        final PriorKnowledge nD = PriorKnowledgeImpl.builder().name("D").build();
+        reasoner.insert(nB, nC, nD);
+
+        final Relation bToA = new RelationImpl( nB, nA, RelationType.SUBTYPE );
+        final Relation cToA = new RelationImpl( nC, nA, RelationType.SUBTYPE );
+        final Relation dToA = new RelationImpl( nD, nA, RelationType.SUBTYPE );
+        reasoner.insert( bToA, cToA, dToA );
+
+        final PriorKnowledge nE = PriorKnowledgeImpl.builder().name("E").build();
+        final PriorKnowledge nF = PriorKnowledgeImpl.builder().name("F").build();
+        reasoner.insert(nE, nF);
+
+        final Relation eToC = new RelationImpl( nE, nC, RelationType.PART);
+        final Relation fToD = new RelationImpl( nF, nD, RelationType.PART);
+        reasoner.insert( eToC, fToD );
+
+        final PriorKnowledge nE1 = PriorKnowledgeImpl.builder().name("E1").build();
+        final PriorKnowledge nE2 = PriorKnowledgeImpl.builder().name("E2").build();
+        final PriorKnowledge nE3 = PriorKnowledgeImpl.builder().name("E3").build();
+        final PriorKnowledge nE4 = PriorKnowledgeImpl.builder().name("E4").build();
+        final PriorKnowledge nE5 = PriorKnowledgeImpl.builder().name("E5").build();
+        final PriorKnowledge nE6 = PriorKnowledgeImpl.builder().name("E6").build();
+        reasoner.insert(nE1, nE2, nE3, nE4, nE5, nE6);
+
+        final Relation e1ToE = new RelationImpl( nE1, nE, RelationType.PART );
+        final Relation e2ToE = new RelationImpl( nE2, nE, RelationType.PART );
+        final Relation e3ToE = new RelationImpl( nE3, nE, RelationType.PART );
+        final Relation e4ToE = new RelationImpl( nE4, nE, RelationType.PART );
+        final Relation e5ToE = new RelationImpl( nE5, nE, RelationType.PART );
+        final Relation e6ToE = new RelationImpl( nE6, nE, RelationType.PART );
+        reasoner.insert( e1ToE, e2ToE, e3ToE, e4ToE, e5ToE, e6ToE );
+
+        final PriorKnowledge nF1 = PriorKnowledgeImpl.builder().name("F1").build();
+        final PriorKnowledge nF2 = PriorKnowledgeImpl.builder().name("F2").build();
+        final PriorKnowledge nF3 = PriorKnowledgeImpl.builder().name("F3").build();
+        final PriorKnowledge nF4 = PriorKnowledgeImpl.builder().name("F4").build();
+        final PriorKnowledge nF5 = PriorKnowledgeImpl.builder().name("F5").build();
+        reasoner.insert(nF1, nF2, nF3, nF4, nF5);
+
+        final Relation f1ToF = new RelationImpl( nF1, nF, RelationType.PART );
+        final Relation f2ToF = new RelationImpl( nF2, nF, RelationType.PART );
+        final Relation f3ToF = new RelationImpl( nF3, nF, RelationType.PART );
+        final Relation f4ToF = new RelationImpl( nF4, nF, RelationType.PART );
+        final Relation f5ToF = new RelationImpl( nF5, nF, RelationType.PART );
+        reasoner.insert( f1ToF, f2ToF, f3ToF, f4ToF, f5ToF );
+
+        final PriorKnowledge nF1a =  PriorKnowledgeImpl.builder().name("F1a").build();
+        final PriorKnowledge nF2a =  PriorKnowledgeImpl.builder().name("F2a").build();
+        reasoner.insert( nF1a, nF2a );
+
+        final Relation f1aToF1 = new RelationImpl( nF1a, nF1, RelationType.PART );
+        final Relation f2aToF2 = new RelationImpl( nF2a, nF2, RelationType.PART );
+        reasoner.insert( f1aToF1 , f2aToF2 );
+
+
+        final Observation oeA1 = ObservationImpl.builder()
+                                                .type(ObservationType.EXPERIMENTATION)
+                                                .name("oeA1")
+                                                .truthValue(TruthValue.t )
+                                                .build();
+        final Observation oeA2 = ObservationImpl.builder()
+                                                .type(ObservationType.EXPERIMENTATION)
+                                                .name("oeA2")
+                                                .truthValue(TruthValue.f )
+                                                .build();
+        final Relation oeA1ToA = new RelationImpl( oeA1, nA );
+        final Relation oeA2ToA = new RelationImpl( oeA2, nA );
+        reasoner.insert( oeA1, oeA2, oeA1ToA, oeA2ToA );
+
+        final Observation opF1 = ObservationImpl.builder()
+                                                .type(ObservationType.COMPUTATION)
+                                                .name("opF1")
+                                                .truthValue(TruthValue.t )
+                                                .build();
+        final Observation opF2 = ObservationImpl.builder()
+                                                .type(ObservationType.COMPUTATION)
+                                                .name("opF2")
+                                                .truthValue(TruthValue.t )
+                                                .build();
+        final Relation opF1ToF = new RelationImpl( opF1, nF1 );
+        final Relation opF2ToF = new RelationImpl( opF2, nF2 );
+        reasoner.insert( opF1, opF2, opF1ToF, opF2ToF );
+
+        reasoner.reasoning();
+
     }
 }

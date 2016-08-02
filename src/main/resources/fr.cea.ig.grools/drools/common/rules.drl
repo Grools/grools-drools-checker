@@ -58,7 +58,7 @@ rule "PriorKnowledge is a leaf"  agenda-group "observation" when
     // Select all predictions linked to $pk
     $obsToPk    : Set( ) from collect( Relation(    source isA Observation,
                                                     target == $pk,
-                                                    type ( == ObservationType.COMPUTATION || == ObservationType.ANNOTATION ) ) )
+                                                    type ( == ObservationType.COMPUTATION || == ObservationType.CURATION ) ) )
     $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
                                         init  ( Set set =  new HashSet(); ),
                                         action( set.add( $rel.getSource() ); ),
@@ -69,7 +69,7 @@ rule "PriorKnowledge is a leaf"  agenda-group "observation" when
                                                                 result( TruthValue.union( set ) ) )
     $result: TruthValuePowerSet( this != $pk.getPrediction(), this == TruthValueSet.union( $directPrediction ) )
 then
-    logger.info( $pk.getName()+" is leaf of and his direct prediction is " +$directPrediction );
+    logger.debug( $pk.getName()+" is leaf of and his direct prediction is " +$directPrediction );
     modify( $pk ){
         setPrediction( $result )
     };
@@ -84,7 +84,7 @@ rule "Expectable is a top"  agenda-group "observation" when
     // Select all predictions linked to $pk
     $obsToPk    : Set( ) from collect( Relation(    source isA Observation,
                                                     target == $pk,
-                                                    type ( == ObservationType.EXPERIMENTATION || == ObservationType.ANNOTATION ) ) )
+                                                    type ( == ObservationType.EXPERIMENTATION || == ObservationType.CURATION ) ) )
     $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
                                         init  ( Set set =  new HashSet(); ),
                                         action( set.add( $rel.getSource() ); ),
@@ -99,7 +99,7 @@ rule "Expectable is a top"  agenda-group "observation" when
                                             action( set.add(  $rel.getSource() ); ),
                                             result( set ) )
 then
-    logger.info( $pk.getName()+" is top of and his direct expectation is " + $directExpectation);
+    logger.debug( $pk.getName()+" is top of and his direct expectation is " + $directExpectation);
     modify( $pk ){
         setExpectation( $result )
     };
@@ -130,7 +130,7 @@ rule "Prior-knowledge has the greatest truth degree value from all his brothers"
     $truths: Set() from collect( PriorKnowledge( prediction.getTruth() == $pk.getPrediction().getTruth() ) from $children_of_parent )
     forall( PriorKnowledge( prediction.size() >= $pk.getPrediction().size() ) from $truths )
 then
-    logger.info( $pk.getName()+" is link to " + $parent.getName()+" with the greatest truth degree value from all his brothers");
+    logger.debug( $pk.getName()+" is link to " + $parent.getName()+" with the greatest truth degree value from all his brothers");
     EnumSet<Qualifier> qualifiers = $relation.getQualifiers();
     qualifiers.add( Qualifier.GREATEST_TRUTH_DEGREE );
     modify($relation){
@@ -158,7 +158,7 @@ rule "Prior-knowledge has the smallest truth degree value from all his brothers"
     $truths: Set() from collect( PriorKnowledge( prediction.getTruth() == $pk.getPrediction().getTruth() ) from $children_of_parent )
     forall( PriorKnowledge( prediction.size() <= $pk.getPrediction().size() ) from $truths )
 then
-    logger.info( $pk.getName()+" is link to " + $parent.getName()+" with the smallest truth degree value from all his brothers");
+    logger.debug( $pk.getName()+" is link to " + $parent.getName()+" with the smallest truth degree value from all his brothers");
     EnumSet<Qualifier> qualifiers = $relation.getQualifiers();
     qualifiers.add( Qualifier.SMALLEST_TRUTH_DEGREE );
     modify($relation){
@@ -186,7 +186,7 @@ rule "Prior-knowledge is not the smallest and not the greatest truth degree valu
     exists( PriorKnowledge( prediction.getTruth() > $pk.getPrediction().getTruth() ) from $children_of_parent )
     exists( PriorKnowledge( prediction.getTruth() < $pk.getPrediction().getTruth() ) from $children_of_parent )
 then
-    logger.info( $pk.getName()+" is link to " + $parent.getName()+" with not the smallest and not the greatest truth degree value from all his brothers");
+    logger.debug( $pk.getName()+" is link to " + $parent.getName()+" with not the smallest and not the greatest truth degree value from all his brothers");
     modify($relation){
         setQualifiers( EnumSet.of( Qualifier.NOR_GREATEST_NOR_TRUTH_FALSEHOOD_DEGREE ) )
     };

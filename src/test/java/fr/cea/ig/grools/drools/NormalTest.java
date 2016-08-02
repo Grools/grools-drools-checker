@@ -372,7 +372,7 @@ public class NormalTest {
         Observation o = ObservationImpl.builder()
                                        .name("oE2")
                                        .truthValue( TruthValue.t )
-                                       .type( ObservationType.ANNOTATION )
+                                       .type( ObservationType.CURATION )
                                        .build();
         Relation oToE = new RelationImpl( o, cE, o.getType() );
         reasoner.insert( o, oToE );

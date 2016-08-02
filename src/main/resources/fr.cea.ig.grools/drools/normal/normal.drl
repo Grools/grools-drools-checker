@@ -80,7 +80,7 @@ rule "Prior-knowledge has a group of predictable part with any specific predicte
     // Select all predictions linked to $pk
     $obsToPk    : Set( ) from collect( Relation(    source isA Observation,
                                                     target == $pk,
-                                                    type ( == ObservationType.COMPUTATION || == ObservationType.ANNOTATION ) ) )
+                                                    type ( == ObservationType.COMPUTATION || == ObservationType.CURATION ) ) )
     $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
                                         init  ( Set set =  new HashSet(); ),
                                         action( set.add( $rel.getSource() ); ),
@@ -99,7 +99,7 @@ rule "Prior-knowledge has a group of predictable part with any specific predicte
                                             result( set )
                                          )
 then
-    logger.info( $pk.getName()+" has part group of prior-knowledge their prediction are merged " +$predictionFromChildren+ " and we add direct observation " + $directPrediction + " to infer "+$result);
+    logger.debug( $pk.getName()+" has part group of prior-knowledge their prediction are merged " +$predictionFromChildren+ " and we add direct observation " + $directPrediction + " to infer "+$result);
     modify( $pk ){
         setPrediction( $result )
     };
@@ -139,7 +139,7 @@ rule "Prior-knowledge has a group of predictable part with at least one specific
     // Select all predictions linked to $pk
     $obsToPk    : Set( ) from collect( Relation(    source isA Observation,
                                                     target == $pk,
-                                                    type ( == ObservationType.COMPUTATION || == ObservationType.ANNOTATION ) ) )
+                                                    type ( == ObservationType.COMPUTATION || == ObservationType.CURATION ) ) )
     $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
                                         init  ( Set set =  new HashSet(); ),
                                         action( set.add( $rel.getSource() ); ),
@@ -158,7 +158,7 @@ rule "Prior-knowledge has a group of predictable part with at least one specific
                                             result( set )
                                          )
 then
-    logger.info( $pk.getName()+" has part group of prior-knowledge with one this group to be specific and predicted, their prediction are merged " +$predictionFromChildren+ " and we add direct observation " + $directPrediction + " to infer "+$result);
+    logger.debug( $pk.getName()+" has part group of prior-knowledge with one this group to be specific and predicted, their prediction are merged " +$predictionFromChildren+ " and we add direct observation " + $directPrediction + " to infer "+$result);
     modify( $pk ){
         setPrediction( $result )
     };
@@ -182,7 +182,7 @@ rule "Prior-knowledge has subtype prior-knowledge [prediction]" agenda-group "pr
     // Select all predictions linked to $pk
     $obsToPk    : Set( ) from collect( Relation(    source isA Observation,
                                                     target == $parent,
-                                                    type ( == ObservationType.COMPUTATION || == ObservationType.ANNOTATION ) ) )
+                                                    type ( == ObservationType.COMPUTATION || == ObservationType.CURATION ) ) )
     $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
                                         init  ( Set set =  new HashSet(); ),
                                         action( set.add( $rel.getSource() ); ),
@@ -200,7 +200,7 @@ rule "Prior-knowledge has subtype prior-knowledge [prediction]" agenda-group "pr
                                             result( set )
                                          )
 then
-    logger.info( $parent.getName()+" has subtype group of prior-knowledge, their greatest prediction are keep " +$child.getPrediction()+ " and we add direct observation " + $directPrediction + " to infer "+$result);
+    logger.debug( $parent.getName()+" has subtype group of prior-knowledge, their greatest prediction are keep " +$child.getPrediction()+ " and we add direct observation " + $directPrediction + " to infer "+$result);
     modify( $parent ){
         setPrediction( $result )
     };
@@ -236,7 +236,7 @@ rule "Prior-knowledge is part of another prior-knowledge [expectation]" agenda-g
     // Select all expectations linked to $pk
     $obsToPk : Set( ) from collect( Relation(   source isA Observation,
                                                 target == $pk,
-                                                type ( == ObservationType.EXPERIMENTATION || == ObservationType.ANNOTATION ) ) )
+                                                type ( == ObservationType.EXPERIMENTATION || == ObservationType.CURATION ) ) )
     $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
                                             init  ( Set set =  new HashSet(); ),
                                             action( set.add( $rel.getSource() ); ),
@@ -252,7 +252,7 @@ rule "Prior-knowledge is part of another prior-knowledge [expectation]" agenda-g
                                             action( set.add(  $rel.getSource() ); ),
                                             result( set ) )
 then
-    logger.info( $pk.getName()+" is part of one or more parents prior-knowledge their expectation are merged " +$expectationFromParents+ " and we add direct observation " + $directExpectation + " to infer "+$result);
+    logger.debug( $pk.getName()+" is part of one or more parents prior-knowledge their expectation are merged " +$expectationFromParents+ " and we add direct observation " + $directExpectation + " to infer "+$result);
     modify( $pk ){
         setExpectation( $result )
     };
@@ -289,7 +289,7 @@ rule "Prior-knowledge is subtype of another prior-knowledge and has one of the g
     // Select all expectations linked to $pk
     $obsToPk : Set( ) from collect( Relation(  source isA Observation,
                                                         target == $pk,
-                                                        type ( == ObservationType.EXPERIMENTATION || == ObservationType.ANNOTATION ) ) )
+                                                        type ( == ObservationType.EXPERIMENTATION || == ObservationType.CURATION ) ) )
     $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
                                             init  ( Set set =  new HashSet(); ),
                                             action( set.add( $rel.getSource() ); ),
@@ -307,7 +307,7 @@ rule "Prior-knowledge is subtype of another prior-knowledge and has one of the g
                                             action( set.add(  $rel.getSource() ); ),
                                             result( set ) )
 then
-    logger.info( $pk.getName()+" is subtype of one or more parents prior-knowledge and has the greatest prediction with at least one parent their expectation are merged " +$expectationFromParents+ " and we add direct observation " + $directExpectation + " to infer "+$result);
+    logger.debug( $pk.getName()+" is subtype of one or more parents prior-knowledge and has the greatest prediction with at least one parent their expectation are merged " +$expectationFromParents+ " and we add direct observation " + $directExpectation + " to infer "+$result);
     modify( $pk ){
         setExpectation( $result )
     };
@@ -348,7 +348,7 @@ rule "Prior-knowledge is subtype of another prior-knowledge and is not one of th
     // Select all expectations linked to $pk
     $obsToPk : Set( ) from collect( Relation(  source isA Observation.class,
                                                         target == $pk,
-                                                        type ( == ObservationType.EXPERIMENTATION || == ObservationType.ANNOTATION ) ) )
+                                                        type ( == ObservationType.EXPERIMENTATION || == ObservationType.CURATION ) ) )
     $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
                                             init  ( Set set =  new HashSet(); ),
                                             action( set.add( $rel.getSource() ); ),
@@ -367,7 +367,7 @@ rule "Prior-knowledge is subtype of another prior-knowledge and is not one of th
                                             result( set )
                                          )
 then
-    logger.info( $pk.getName()+" is subtype of one or more parents prior-knowledge and has not the greatest prediction with at least one parent their expectation are not merged " +$expectationFromParents+ ", but we add direct observation " + $directExpectation + " to infer "+$result);
+    logger.debug( $pk.getName()+" is subtype of one or more parents prior-knowledge and has not the greatest prediction with at least one parent their expectation are not merged " +$expectationFromParents+ ", but we add direct observation " + $directExpectation + " to infer "+$result);
     modify( $pk ){
         setExpectation( $result )
     };
@@ -393,7 +393,7 @@ rule "Prior-knowledge is subtype of an not  an expected prior-knowledge [expecta
     // Select all expectations linked to $pk
     $obsToPk : Set( ) from collect( Relation(  source isA Observation.class,
                                                         target == $pk,
-                                                        type ( == ObservationType.EXPERIMENTATION || == ObservationType.ANNOTATION ) ) )
+                                                        type ( == ObservationType.EXPERIMENTATION || == ObservationType.CURATION ) ) )
     $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
                                             init  ( Set set =  new HashSet(); ),
                                             action( set.add( $rel.getSource() ); ),
@@ -411,7 +411,7 @@ rule "Prior-knowledge is subtype of an not  an expected prior-knowledge [expecta
                                             result( set )
                                          )
 then
-    logger.info( $pk.getName()+" is subtype of prior-knowledge which is strongly not expected we infer this expectation " +$parent.getExpectation()+ " and we add direct observation " + $directExpectation + " to infer "+$result);
+    logger.debug( $pk.getName()+" is subtype of prior-knowledge which is strongly not expected we infer this expectation " +$parent.getExpectation()+ " and we add direct observation " + $directExpectation + " to infer "+$result);
     modify( $pk ){
         setExpectation( $result )
     };

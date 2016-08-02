@@ -76,7 +76,7 @@ class Cases {
                                                .build();
         Observation o1 = ObservationImpl.builder()
                                         .name( "o" )
-                                        .type( ObservationType.ANNOTATION )
+                                        .type( ObservationType.CURATION )
                                         .build();
         Relation o1ToPk1 = new RelationImpl( o1, pk1, o1.getType() );
         reasoner.insert( pk1, o1, o1ToPk1 );
@@ -90,7 +90,7 @@ class Cases {
                                                .build();
         Observation o1 = ObservationImpl.builder()
                                         .name( "o1" )
-                                        .type( ObservationType.ANNOTATION )
+                                        .type( ObservationType.CURATION )
                                         .truthValue( TruthValue.f )
                                         .build();
         Relation o1ToPk1 = new RelationImpl( o1, pk1, o1.getType() );
@@ -115,7 +115,7 @@ class Cases {
                                                .build();
         Observation o1 = ObservationImpl.builder()
                                         .name( "o1" )
-                                        .type( ObservationType.ANNOTATION )
+                                        .type( ObservationType.CURATION )
                                         .build();
         Relation o1ToPk1 = new RelationImpl( o1, pk1, o1.getType() );
 
@@ -180,7 +180,7 @@ class Cases {
                                                .build();
         Observation o1 = ObservationImpl.builder()
                                         .name( "o1" )
-                                        .type( ObservationType.ANNOTATION )
+                                        .type( ObservationType.CURATION )
                                         .build();
         Relation o1ToPk1 = new RelationImpl( o1, pk1, o1.getType() );
 

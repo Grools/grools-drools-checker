@@ -67,8 +67,8 @@ public class LogAgendaDRL implements AgendaEventListener {
     public void matchCreated( final MatchCreatedEvent event ) {
         final RuleTerminalNodeLeftTuple match   = ( RuleTerminalNodeLeftTuple ) event.getMatch();
         final List<Object>              objects = match.getObjects();
-        final StringBuilder             sb      = new StringBuilder("Match from rule: ");
-        sb.append( match.getRule().getName() )
+        final StringBuilder             sb      = new StringBuilder();
+        sb.append( "================ " + match.getRule().getName() +  " ================")
           .append( '\n' );
         final String obj = objects.stream()
                                   .map( Object::toString )
@@ -87,7 +87,6 @@ public class LogAgendaDRL implements AgendaEventListener {
 
     @Override
     public void afterMatchFired( final AfterMatchFiredEvent event ) {
-
     }
 
     @Override

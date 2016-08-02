@@ -35,141 +35,160 @@ package fr.cea.ig.grools;
 
 import fr.cea.ig.grools.fact.Observation;
 import fr.cea.ig.grools.fact.ObservationType;
-import fr.cea.ig.grools.fact.ExpectationSet;
-import fr.cea.ig.grools.fact.ExpectationSetImpl;
-import fr.cea.ig.grools.fact.PredictionSet;
-import fr.cea.ig.grools.fact.PredictionSetImpl;
 import fr.cea.ig.grools.fact.Relation;
 import fr.cea.ig.grools.fact.RelationImpl;
 import fr.cea.ig.grools.fact.RelationType;
 import fr.cea.ig.grools.logic.TruthValuePowerSet;
 import fr.cea.ig.grools.fact.PriorKnowledge;
+import fr.cea.ig.grools.drools.Message;
 
 import java.util.Set;
 import java.util.HashSet;
 import java.util.EnumSet;
+import java.lang.Float;
 
 global ch.qos.logback.classic.Logger logger;
 
 dialect "java"
 
-rule "Create a prediction set related to a prior-knowledge" agenda-group  "observation set" when
-    $pk     : PriorKnowledge()
-    not( Relation( source isA PredictionSet, target == $pk, type == RelationType.PREDICTION ) )
-then
-    PredictionSet pred = new PredictionSetImpl( "predictions-"+$pk.getName(),
-                                                "GROOLS",
-                                                $pk.getLabel(),
-                                                "",
-                                                TruthValueSet.N );
-    Relation predToPk = new RelationImpl( pred, $pk, RelationType.PREDICTION );
-    insert( pred );
-    insert( predToPk );
-    modify( $pk ){
-         setPrediction( TruthValuePowerSet.N )
-    }
-end
-
-rule "Create a expectation set related to a prior-knowledge" agenda-group  "observation set" when
-    $pk     : PriorKnowledge()
-    not( Relation( target isA ExpectationSet, source == $pk, type == RelationType.EXPECTATION ) )
-
-then
-    ExpectationSet exp = new ExpectationSetImpl( "expectations-"+$pk.getName(),
-                                                "GROOLS",
-                                                $pk.getLabel(),
-                                                "",
-                                                TruthValueSet.N );
-    Relation expToPk = new RelationImpl( $pk, exp, RelationType.EXPECTATION );
-    insert( exp );
-    insert( expToPk );
-    modify( $pk ){
-        setExpectation( TruthValuePowerSet.N )
-    };
-end
-
-rule "Computation need to be linked to a prediction set" agenda-group  "observation set" when
-    $pk         : PriorKnowledge()
-    $predToPk   : Relation( source isA PredictionSet, target == $pk, type == RelationType.PREDICTION )
-    $obsToPk    : Relation(   source    isA Observation,
-                              target    == $pk,
-                              type      == ObservationType.COMPUTATION )
-then
-    insert( new RelationImpl( $obsToPk.getSource(), $predToPk.getSource(), $obsToPk.getType() ) );
-    retract( $obsToPk );
-    update( $pk );
-end
-
-rule "Experimentation need to be linked to an expectation set" agenda-group  "observation set" when
-    $pk         : PriorKnowledge()
-    $expToPk    : Relation( target isA ExpectationSet, source == $pk, type == RelationType.EXPECTATION )
-    $obsToPk    : Relation(   source    isA Observation,
-                              target    == $pk,
-                              type      == ObservationType.EXPERIMENTATION )
-then
-    insert( new RelationImpl( $obsToPk.getSource(), $expToPk.getTarget(), $obsToPk.getType() ) );
-    retract( $obsToPk );
-    update( $pk );
-end
-
-rule "Annotation need to be linked to a prediction set and an expectation set" agenda-group  "observation set" when
-    $pk         : PriorKnowledge()
-    $predToPk   : Relation( source isA PredictionSet,  target == $pk, type == RelationType.PREDICTION )
-    $expToPk    : Relation( target isA ExpectationSet, source == $pk, type == RelationType.EXPECTATION )
-    $obsToPk    : Relation(   source    isA Observation,
-                              target    == $pk,
-                              type      == ObservationType.ANNOTATION )
-then
-    insert( new RelationImpl( $obsToPk.getSource(), $predToPk.getSource(), $obsToPk.getType() ) );
-    insert( new RelationImpl( $obsToPk.getSource(), $expToPk.getTarget(), $obsToPk.getType() ) );
-    retract( $obsToPk );
-end
-
-rule "Prior-knowledge has prediction set" agenda-group  "observation" when
-    $pk         : PriorKnowledge()
-    $predToPk   : Relation( source isA PredictionSet, target == $pk, type == RelationType.PREDICTION )
-    $pred       : PredictionSet( this == $predToPk.getSource() )
-    $obsToPk    : Set( ) from collect( Relation(    source isA Observation.class,
-                                                    target == $pred,
+rule "PriorKnowledge is a leaf"  agenda-group "observation" when
+    // Select any prior-knowledge
+    $pk: PriorKnowledge()
+    not( Relation( source isA PriorKnowledge, target == $pk, type ( == RelationType.PART || == RelationType.SUBTYPE ) ) )
+    // Select all predictions linked to $pk
+    $obsToPk    : Set( ) from collect( Relation(    source isA Observation,
+                                                    target == $pk,
                                                     type ( == ObservationType.COMPUTATION || == ObservationType.ANNOTATION ) ) )
     $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
                                         init  ( Set set =  new HashSet(); ),
                                         action( set.add( $rel.getSource() ); ),
                                         result( set ) )
-    $directPrediction: TruthValueSet( this != $pred.getPrediction() ) from accumulate(   $obs: Observation( ) from $obsSet ,
+    $directPrediction: TruthValueSet(  ) from accumulate(   $obs: Observation( ) from $obsSet ,
                                                                 init  ( EnumSet set =  EnumSet.noneOf(TruthValue.class);  ),
                                                                 action( set.add( $obs.getTruthValue() ); ),
                                                                 result( TruthValue.union( set ) ) )
+    $result: TruthValuePowerSet( this != $pk.getPrediction(), this == TruthValueSet.union( $directPrediction ) )
 then
-    modify( $pred ){
-         setPrediction( $directPrediction )
-    }
+    logger.info( $pk.getName()+" is leaf of and his direct prediction is " +$directPrediction );
     modify( $pk ){
-         setPrediction( TruthValueSet.union( $directPrediction ) )
-    }
+        setPrediction( $result )
+    };
+    kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("prediction inference").setFocus();
+    kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("qualifier mark").setFocus();
 end
 
-rule "Prior-knowledge has expectation set" agenda-group  "observation" when
-    $pk        : PriorKnowledge()
-    $expToPk   : Relation( target isA ExpectationSet.class, source == $pk, type == RelationType.EXPECTATION )
-    $exp       : ExpectationSet( this == $expToPk.getTarget() )
-    $obsToPk : Set( ) from collect( Relation(  source isA Observation.class,
-                                                        target == $exp,
-                                                        type ( == ObservationType.EXPERIMENTATION || == ObservationType.ANNOTATION ) ) )
+rule "Expectable is a top"  agenda-group "observation" when
+    // Select any prior-knowledge
+    $pk: PriorKnowledge()
+    not( Relation( target isA PriorKnowledge, source == $pk, type ( == RelationType.PART || == RelationType.SUBTYPE ) ) )
+    // Select all predictions linked to $pk
+    $obsToPk    : Set( ) from collect( Relation(    source isA Observation,
+                                                    target == $pk,
+                                                    type ( == ObservationType.EXPERIMENTATION || == ObservationType.ANNOTATION ) ) )
     $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
-                                            init  ( Set set =  new HashSet(); ),
-                                            action( set.add( $rel.getSource() ); ),
-                                            result( set ) )
-    $directExpectation: TruthValueSet( this != $exp.getExpectation() ) from accumulate(   $obs: Observation( ) from $obsSet ,
+                                        init  ( Set set =  new HashSet(); ),
+                                        action( set.add( $rel.getSource() ); ),
+                                        result( set ) )
+    $directExpectation: TruthValueSet(  ) from accumulate(   $obs: Observation( ) from $obsSet ,
                                                                 init  ( EnumSet set =  EnumSet.noneOf(TruthValue.class);  ),
                                                                 action( set.add( $obs.getTruthValue() ); ),
                                                                 result( TruthValue.union( set ) ) )
-
+    $result: TruthValuePowerSet( this != $pk.getExpectation(), this == TruthValueSet.union( $directExpectation ) )
+    $pk_children: Set( ) from accumulate(  $rel: Relation(  source isA PriorKnowledge, target == $pk ),
+                                            init  ( Set set =  new HashSet();  ),
+                                            action( set.add(  $rel.getSource() ); ),
+                                            result( set ) )
 then
-    modify( $exp ){
-        setExpectation( $directExpectation )
-    };
+    logger.info( $pk.getName()+" is top of and his direct expectation is " + $directExpectation);
     modify( $pk ){
-        setExpectation( TruthValueSet.union(  $directExpectation ) )
+        setExpectation( $result )
     };
+    for( final Object obj : $pk_children){
+        final PriorKnowledge child = (PriorKnowledge)obj;
+        update(child);
+    }
+    kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("conclusion").setFocus();
+    kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("expectation inference").setFocus();
+end
+
+rule "Prior-knowledge has the greatest truth degree value from all his brothers" agenda-group "qualifier mark" when
+    $pk: PriorKnowledge( prediction != TruthValuePowerSet.n )
+    // take the parent prior-knowledge of $pk
+    $relation: Relation(    target      isA PriorKnowledge,
+                            source      ==  $pk,
+                            qualifiers  not contains Qualifier.GREATEST_TRUTH_DEGREE,
+                            type        ( ==  RelationType.SUBTYPE || == RelationType.PART ) )
+    $parent: PriorKnowledge( this == $relation.getTarget() )
+    // Select all children of parent, $pk included
+    $children_of_parent: Set( ) from accumulate(    $rel: Relation(  source isA PriorKnowledge, target == $parent, type == $relation.getType() ),
+                                                    init  ( Set set =  new HashSet();  ),
+                                                    action( set.add(  $rel.getSource() ); ),
+                                                    result( set ) )
+    // All children prediction are inferred
+    forall( PriorKnowledge( prediction != TruthValuePowerSet.n, prediction.getTruth() <= $pk.getPrediction().getTruth()  ) from $children_of_parent )
+    // and $pk has the one of greatest truth value degree from his prediction compared to all others children
+    $truths: Set() from collect( PriorKnowledge( prediction.getTruth() == $pk.getPrediction().getTruth() ) from $children_of_parent )
+    forall( PriorKnowledge( prediction.size() >= $pk.getPrediction().size() ) from $truths )
+then
+    logger.info( $pk.getName()+" is link to " + $parent.getName()+" with the greatest truth degree value from all his brothers");
+    EnumSet<Qualifier> qualifiers = $relation.getQualifiers();
+    qualifiers.add( Qualifier.GREATEST_TRUTH_DEGREE );
+    modify($relation){
+        setQualifiers( qualifiers )
+    };
+    kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("expectation inference").setFocus();
+end
+
+rule "Prior-knowledge has the smallest truth degree value from all his brothers" agenda-group "qualifier mark" when
+    $pk: PriorKnowledge( prediction != TruthValuePowerSet.n )
+    // take the parent prior-knowledge of $pk
+    $relation: Relation(    target        isA PriorKnowledge,
+                            source        ==  $pk,
+                            qualifiers    not contains  Qualifier.SMALLEST_TRUTH_DEGREE,
+                            type        ( ==  RelationType.SUBTYPE || == RelationType.PART ) )
+    $parent: PriorKnowledge( this == $relation.getTarget() )
+    // Select all children of parent, $pk included
+    $children_of_parent: Set( ) from accumulate(    $rel: Relation(  source isA PriorKnowledge, target == $parent, type == $relation.getType() ),
+                                                    init  ( Set set =  new HashSet();  ),
+                                                    action( set.add(  $rel.getSource() ); ),
+                                                    result( set ) )
+    // All children prediction are inferred
+    forall( PriorKnowledge( prediction != TruthValuePowerSet.n, prediction.getTruth() >= $pk.getPrediction().getTruth() ) from $children_of_parent )
+    // $pk has the one of greatest truth value degree from his prediction compared to all others children
+    $truths: Set() from collect( PriorKnowledge( prediction.getTruth() == $pk.getPrediction().getTruth() ) from $children_of_parent )
+    forall( PriorKnowledge( prediction.size() <= $pk.getPrediction().size() ) from $truths )
+then
+    logger.info( $pk.getName()+" is link to " + $parent.getName()+" with the smallest truth degree value from all his brothers");
+    EnumSet<Qualifier> qualifiers = $relation.getQualifiers();
+    qualifiers.add( Qualifier.SMALLEST_TRUTH_DEGREE );
+    modify($relation){
+        setQualifiers( qualifiers )
+    };
+    kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("expectation inference").setFocus();
+end
+
+
+rule "Prior-knowledge is not the smallest and not the greatest truth degree value from all his brothers" agenda-group "qualifier mark" when
+    $pk: PriorKnowledge( prediction != TruthValuePowerSet.n )
+    // take the parent prior-knowledge of $pk
+    $relation: Relation(    target        isA PriorKnowledge,
+                            source        ==  $pk,
+                            qualifiers    not contains Qualifier.NOR_GREATEST_NOR_TRUTH_FALSEHOOD_DEGREE,
+                            type        ( ==  RelationType.SUBTYPE || == RelationType.PART ) )
+    $parent: PriorKnowledge( this == $relation.getTarget() )
+    // Select all children of parent, $pk included
+    $children_of_parent: Set( ) from accumulate(    $rel: Relation(  source isA PriorKnowledge, target == $parent, type == $relation.getType() ),
+                                                    init  ( Set set =  new HashSet();  ),
+                                                    action( set.add(  $rel.getSource() ); ),
+                                                    result( set ) )
+    // $pk has the one of greatest truth value degree from his prediction compared to all others children
+    forall( PriorKnowledge( prediction != TruthValuePowerSet.n ) from $children_of_parent )
+    exists( PriorKnowledge( prediction.getTruth() > $pk.getPrediction().getTruth() ) from $children_of_parent )
+    exists( PriorKnowledge( prediction.getTruth() < $pk.getPrediction().getTruth() ) from $children_of_parent )
+then
+    logger.info( $pk.getName()+" is link to " + $parent.getName()+" with not the smallest and not the greatest truth degree value from all his brothers");
+    modify($relation){
+        setQualifiers( EnumSet.of( Qualifier.NOR_GREATEST_NOR_TRUTH_FALSEHOOD_DEGREE ) )
+    };
+    kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("expectation inference").setFocus();
 end

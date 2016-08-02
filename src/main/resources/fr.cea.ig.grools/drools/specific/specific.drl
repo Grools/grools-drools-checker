@@ -36,10 +36,6 @@ import fr.cea.ig.grools.fact.Concept;
 import fr.cea.ig.grools.fact.Observation;
 import fr.cea.ig.grools.fact.ObservationType;
 import fr.cea.ig.grools.fact.PriorKnowledge;
-import fr.cea.ig.grools.fact.PredictionSet;
-import fr.cea.ig.grools.fact.ExpectationSet;
-import fr.cea.ig.grools.fact.Predictable;
-import fr.cea.ig.grools.fact.Expectable;
 import fr.cea.ig.grools.fact.Relation;
 import fr.cea.ig.grools.fact.RelationType;
 import fr.cea.ig.grools.fact.RelationImpl;
@@ -55,13 +51,17 @@ global ch.qos.logback.classic.Logger logger;
 
 dialect "java"
 
-rule "Predictable is specific to a given priorKnowledge" agenda-group "specific" when
-    $rel: Relation(source isA Predictable, target isA PriorKnowledge.class, type ( == RelationType.PART || == RelationType.SUBTYPE ) )
+rule "PriorKnowledge is specific to a given priorKnowledge" agenda-group "specific mark" when
+    $rel: Relation(source isA PriorKnowledge, target isA PriorKnowledge, type ( == RelationType.PART || == RelationType.SUBTYPE ) )
     $source: PriorKnowledge( this == $rel.source, isSpecific == false )
     $target: PriorKnowledge( this == $rel.target)
-    not( Relation(source == $source, target isA PriorKnowledge.class && target != $target, type (== RelationType.PART || == RelationType.SUBTYPE  ) ) )
-    //not( Relation(source isA PriorKnowledge.class, target == $source ) ) // only on leaf
-    exists( Relation(source (isA PriorKnowledge.class && != $source), target == $target, type == RelationType.PART ) ) // parent prior-knowledge have more than one child
+    not( Relation(  source  == $source,
+                    target  (isA PriorKnowledge && != $target) ,
+                    type    (== RelationType.PART || == RelationType.SUBTYPE  ) ) )
+    // parent prior-knowledge have more than one child
+    exists( Relation(   source  (isA PriorKnowledge && != $source),
+                        target  == $target,
+                        type    == RelationType.PART ) )
 then
     modify($source){
         setIsSpecific( true )
@@ -69,11 +69,13 @@ then
 end
 
 
-rule "Predictable is not specific to a given priorKnowledge" agenda-group "specific" when
-    $rel: Relation(source isA Predictable.class, target isA PriorKnowledge.class, type (== RelationType.PART || == RelationType.SUBTYPE  ) )
-    $source: Predictable( this == $rel.source, isSpecific == true )
-    $target: PriorKnowledge( this == $rel.target)
-    exists( Relation(source == $source, target isA PriorKnowledge.class && target != $target, type (== RelationType.PART || == RelationType.SUBTYPE  ) ) )
+rule "PriorKnowledge is not specific to a given priorKnowledge" agenda-group "specific mark" when
+    $rel: Relation(source isA PriorKnowledge, target isA PriorKnowledge, type (== RelationType.PART || == RelationType.SUBTYPE  ) )
+    $source: PriorKnowledge( this == $rel.source, isSpecific == true )
+    $target: PriorKnowledge( this == $rel.target )
+    exists( Relation(   source  == $source,
+                        target  (isA PriorKnowledge && != $target ),
+                        type    (== RelationType.PART || == RelationType.SUBTYPE  ) ) )
 then
     modify($source){
         setIsSpecific( false )

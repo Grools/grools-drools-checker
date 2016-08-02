@@ -58,29 +58,17 @@ public final class LogRuleDRL implements RuleRuntimeEventListener{
     public LogRuleDRL() {
     }
     public void objectInserted(ObjectInsertedEvent event) {
-        StringBuilder sb = new StringBuilder("Object Inserted -> | ");
-        if( event.getRule() != null ) {
-            sb.append(event.getRule().getName());
-            sb.append(" | ");
-        }
+        StringBuilder sb = new StringBuilder("Object Inserted -> ");
         sb.append(event.getObject());
         logger.debug(sb.toString());
     }
     public void objectUpdated(ObjectUpdatedEvent event) {
-        StringBuilder sb = new StringBuilder("Object Updated -> | ");
-        if( event.getRule() != null ) {
-            sb.append(event.getRule().getName());
-            sb.append(" | ");
-        }
+        StringBuilder sb = new StringBuilder("Object Updated -> ");
         sb.append(event.getObject());
         logger.debug(sb.toString());
     }
     public void objectDeleted(ObjectDeletedEvent event) {
-        StringBuilder sb = new StringBuilder("Object Deleted -> | ");
-        if( event.getRule() != null ) {
-            sb.append(event.getRule().getName());
-            sb.append(" | ");
-        }
+        StringBuilder sb = new StringBuilder("Object Deleted -> ");
         sb.append(event.getOldObject());
         logger.debug(sb.toString());
     }

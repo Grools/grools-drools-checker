@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
 public final class ReasonerImpl implements Reasoner {
 
     private final static String KNAME   = "concept-reasoning";
-    private final static Logger LOGGER  = (Logger) LoggerFactory.getLogger( ReasonerImpl.class );
+    private final static transient Logger LOGGER  = (Logger) LoggerFactory.getLogger( ReasonerImpl.class );
 
     private final KieSession    kieSession;
     private final KieBase       kbase;
@@ -129,9 +129,12 @@ public final class ReasonerImpl implements Reasoner {
                 break;
             case MEDIUM:
                 kieSession.addEventListener( new LogRuleDRL() );
+                kieSession.addEventListener( new LogAgendaDRL() );
                 root.setLevel( Level.DEBUG);
                 break;
             case HIGHT:
+                kieSession.addEventListener( new LogRuleDRL() );
+                kieSession.addEventListener( new LogAgendaDRL() );
                 root.setLevel( Level.TRACE);
                 break;
         }
@@ -198,7 +201,6 @@ public final class ReasonerImpl implements Reasoner {
         final KieBase kbase       = kContainer.newKieBase(getKname(m), kbaseConf);
         //final KieSession kieSession = kbase.newKieSession(kieConf, null);
         final KieSession kieSession = kbase.newKieSession( );
-
         this.kbase      = kbase;
         this.kieSession = kieSession;
         this.mode       = m;
@@ -393,17 +395,26 @@ public final class ReasonerImpl implements Reasoner {
     }
 
     @Override
-    public void reasoning(){
-        kieSession.getAgenda().getAgendaGroup( "finisher" ).setFocus();
-        kieSession.getAgenda().getAgendaGroup( "conclusion" ).setFocus();
-        kieSession.getAgenda().getAgendaGroup( "prior-knowledge expectation" ).setFocus();
-        kieSession.getAgenda().getAgendaGroup( "prior-knowledge prediction" ).setFocus();
-        kieSession.getAgenda().getAgendaGroup( "specific" ).setFocus();
-        kieSession.getAgenda().getAgendaGroup( "observation" ).setFocus();
-        kieSession.getAgenda().getAgendaGroup( "observation set" ).setFocus();
-        kieSession.getAgenda().getAgendaGroup( "graph-fixer" ).setFocus();
-        kieSession.fireAllRules();
+    public void reasoning() {
+        kieSession.getAgenda( ).getAgendaGroup( "specific mark" ).setFocus( );
+        // fix relations between concept
+        kieSession.getAgenda( ).getAgendaGroup( "graph-fixer" ).setFocus( );
+        kieSession.fireAllRules( );
+
+        // remove the agenda
+        kieSession.getAgenda( ).getAgendaGroup( "graph-fixer" ).clear( );
+        kieSession.getAgenda( ).getAgendaGroup( "specific mark" ).clear( );
+
+        // Infer prediction corresponding to leaf nodes, Infer expectation corresponding to top nodes
+        // follow by the post prediction agenda, example of use: search specific relations
+        kieSession.getAgenda( ).getAgendaGroup( "observation" ).setFocus( );
+        kieSession.getAgenda( ).getAgendaGroup( "qualifier mark" ).setFocus( );
+        kieSession.getAgenda( ).getAgendaGroup( "prediction inference" ).setFocus( );
+        kieSession.getAgenda( ).getAgendaGroup( "expectation inference" ).setFocus( );
+        kieSession.getAgenda( ).getAgendaGroup( "conclusion" ).setFocus( );
+        kieSession.fireAllRules( );
     }
+
 
 
     public Reasoner copy(){

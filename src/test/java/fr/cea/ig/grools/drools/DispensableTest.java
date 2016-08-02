@@ -61,7 +61,7 @@ public class DispensableTest {
         assertEquals( TruthValuePowerSet.T, pkA.getPrediction() );
 
         assertEquals( TruthValuePowerSet.T, pkF.getExpectation() );
-        assertEquals( TruthValuePowerSet.NT, pkE.getExpectation() );
+        assertEquals( TruthValuePowerSet.n, pkE.getExpectation() );
         assertEquals( TruthValuePowerSet.N, pkD.getExpectation() );
         assertEquals( TruthValuePowerSet.T, pkC.getExpectation() );
         assertEquals( TruthValuePowerSet.N, pkB.getExpectation() );

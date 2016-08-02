@@ -61,7 +61,7 @@ public class NormalTest {
 
     @Before
     public void setUp(){
-        reasoner = new ReasonerImpl( Mode.NORMAL, Verbosity.HIGHT);
+        reasoner = new ReasonerImpl( Mode.NORMAL, Verbosity.MEDIUM);
     }
 
     @Test
@@ -99,7 +99,7 @@ public class NormalTest {
         Cases.case4( reasoner );
         final PriorKnowledge pk1 = reasoner.getPriorKnowledge( "pk1" );
         assertEquals( TruthValuePowerSet.T, pk1.getPrediction() );
-        assertEquals( TruthValuePowerSet.T, pk1.getExpectation() );
+        assertEquals( TruthValuePowerSet.N, pk1.getExpectation() );
         reasoner.close();
     }
 
@@ -241,12 +241,12 @@ public class NormalTest {
         assertEquals( TruthValuePowerSet.F,  cB.getPrediction() );
         assertEquals( TruthValuePowerSet.TF, cA.getPrediction() );
 
+        assertEquals( TruthValuePowerSet.F, cA.getExpectation() );
+        assertEquals( TruthValuePowerSet.F, cB.getExpectation() );
+        assertEquals( TruthValuePowerSet.F, cC.getExpectation() );
+        assertEquals( TruthValuePowerSet.F, cD.getExpectation() );
         assertEquals( TruthValuePowerSet.F, cE.getExpectation() );
         assertEquals( TruthValuePowerSet.F, cF.getExpectation() );
-        assertEquals( TruthValuePowerSet.F, cD.getExpectation() );
-        assertEquals( TruthValuePowerSet.F, cC.getExpectation() );
-        assertEquals( TruthValuePowerSet.F, cB.getExpectation() );
-        assertEquals( TruthValuePowerSet.F, cA.getExpectation() );
 
         Observation o = ObservationImpl.builder()
                                        .name("oD2")

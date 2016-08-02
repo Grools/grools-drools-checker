@@ -36,13 +36,10 @@ import fr.cea.ig.grools.fact.Concept;
 import fr.cea.ig.grools.fact.Observation;
 import fr.cea.ig.grools.fact.ObservationType;
 import fr.cea.ig.grools.fact.PriorKnowledge;
-import fr.cea.ig.grools.fact.PredictionSet;
-import fr.cea.ig.grools.fact.ExpectationSet;
-import fr.cea.ig.grools.fact.Predictable;
-import fr.cea.ig.grools.fact.Expectable;
 import fr.cea.ig.grools.fact.Relation;
 import fr.cea.ig.grools.fact.RelationType;
 import fr.cea.ig.grools.fact.RelationImpl;
+import fr.cea.ig.grools.logic.Qualifier;
 import fr.cea.ig.grools.logic.TruthValue;
 import fr.cea.ig.grools.logic.TruthValueSet;
 import fr.cea.ig.grools.logic.TruthValuePowerSet;
@@ -56,7 +53,7 @@ global ch.qos.logback.classic.Logger logger;
 dialect "java"
 
 
-rule "Prior-knowledge has a group of predictable part with any specific predicted [prediction]" agenda-group "prior-knowledge prediction" when
+rule "Prior-knowledge has a group of predictable part with any specific predicted [prediction]" agenda-group "prediction inference" when
     // Select any prior-knowledge
     $pk: PriorKnowledge()
     // take the prior-knowledge list, where each concept is a child of $pk and linked by a the relation part-of
@@ -69,7 +66,7 @@ rule "Prior-knowledge has a group of predictable part with any specific predicte
                                                  )
 
     // all children prediction is computed
-    not( PriorKnowledge( prediction == TruthValuePowerSet.n ) from $children )
+    forall( PriorKnowledge( prediction != TruthValuePowerSet.n ) from $children )
 
     // Any concept from children is specific ( this need to be always true in normal mode )
     not( PriorKnowledge( isSpecific == true, prediction == TruthValuePowerSet.T ) from $children )
@@ -80,10 +77,19 @@ rule "Prior-knowledge has a group of predictable part with any specific predicte
                                                                                                 action( truthfulness.add( $child.getPrediction() ); ),
                                                                                                 result( TruthValuePowerSet.merge( truthfulness ) )
                                                                                               )
-    // Select the relation which link a prediction set to $pk
-    $predToPk: Relation( source isA PredictionSet, target == $pk, type == RelationType.PREDICTION )
+    // Select all predictions linked to $pk
+    $obsToPk    : Set( ) from collect( Relation(    source isA Observation,
+                                                    target == $pk,
+                                                    type ( == ObservationType.COMPUTATION || == ObservationType.ANNOTATION ) ) )
+    $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
+                                        init  ( Set set =  new HashSet(); ),
+                                        action( set.add( $rel.getSource() ); ),
+                                        result( set ) )
+    $directPrediction: TruthValueSet(  ) from accumulate(   $obs: Observation( ) from $obsSet ,
+                                                                init  ( EnumSet set =  EnumSet.noneOf(TruthValue.class);  ),
+                                                                action( set.add( $obs.getTruthValue() ); ),
+                                                                result( TruthValue.union( set ) ) )
     // Add the direct prediction to merged set of all prediction from children ( example: {{T}} add {N} give {{T}})
-    $directPrediction: TruthValueSet( this == ((PredictionSet)$predToPk.getSource()).getPrediction() )
     $result: TruthValuePowerSet( this != $pk.getPrediction(), this == TruthValuePowerSet.add( $predictionFromChildren, $directPrediction ) )
 
     $pk_parents: Set( ) from accumulate(   $rel: Relation(  target isA PriorKnowledge,
@@ -93,6 +99,7 @@ rule "Prior-knowledge has a group of predictable part with any specific predicte
                                             result( set )
                                          )
 then
+    logger.info( $pk.getName()+" has part group of prior-knowledge their prediction are merged " +$predictionFromChildren+ " and we add direct observation " + $directPrediction + " to infer "+$result);
     modify( $pk ){
         setPrediction( $result )
     };
@@ -100,10 +107,11 @@ then
         final PriorKnowledge parent = (PriorKnowledge)obj;
         update(parent);
     }
+     kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("qualifier mark").setFocus();
 end
 
 
-rule "Prior-knowledge has a group of predictable part with at least one specific and predicted [prediction]" agenda-group "prior-knowledge prediction" when
+rule "Prior-knowledge has a group of predictable part with at least one specific and predicted [prediction]" agenda-group "prediction inference" when
     // Select any prior-knowledge
     $pk: PriorKnowledge()
     // take the prior-knowledge list, where each concept is a child of $pk and linked by a the relation part-of
@@ -116,22 +124,31 @@ rule "Prior-knowledge has a group of predictable part with at least one specific
                                                )
 
     // all children prediction is computed
-    not( PriorKnowledge( prediction == TruthValuePowerSet.n ) from $children )
+    forall( PriorKnowledge( prediction != TruthValuePowerSet.n ) from $children )
 
     // At least one prior-knowledge from children is specific and predicted ( this need to be always false in normal mode )
     exists( PriorKnowledge( isSpecific == true, prediction == TruthValuePowerSet.T ) from $children )
 
 
     // Merge all prediction from children together which have his prediction known (example: {{N}} is filtered so {{N}} with {{T}} give {{T}})
-    $predictionFromChildren: TruthValuePowerSet( ) from accumulate(  $child: Predictable( ) from $children,
+    $predictionFromChildren: TruthValuePowerSet( ) from accumulate(  $child: PriorKnowledge( ) from $children,
                                                                                                     init  ( EnumSet truthfulness = EnumSet.noneOf( TruthValuePowerSet.class );  ),
                                                                                                     action( if( $child.getPrediction() != TruthValuePowerSet.N && $child.getPrediction() != TruthValuePowerSet.NT ) truthfulness.add( $child.getPrediction() ); ),
                                                                                                     result( TruthValuePowerSet.merge( truthfulness ) )
                                                                                                  )
-    // Select the relation which link a prediction set to $pk
-    $predToPk: Relation( source isA PredictionSet, target == $pk, type == RelationType.PREDICTION )
+    // Select all predictions linked to $pk
+    $obsToPk    : Set( ) from collect( Relation(    source isA Observation,
+                                                    target == $pk,
+                                                    type ( == ObservationType.COMPUTATION || == ObservationType.ANNOTATION ) ) )
+    $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
+                                        init  ( Set set =  new HashSet(); ),
+                                        action( set.add( $rel.getSource() ); ),
+                                        result( set ) )
+    $directPrediction: TruthValueSet(  ) from accumulate(   $obs: Observation( ) from $obsSet ,
+                                                                init  ( EnumSet set =  EnumSet.noneOf(TruthValue.class);  ),
+                                                                action( set.add( $obs.getTruthValue() ); ),
+                                                                result( TruthValue.union( set ) ) )
     // Add the direct prediction to merged set of all prediction from children ( example: {{T}} add {N} give {{T}})
-    $directPrediction: TruthValueSet( this == ((PredictionSet)$predToPk.getSource()).getPrediction() )
     $result: TruthValuePowerSet( this != $pk.getPrediction(), this == TruthValuePowerSet.add( $predictionFromChildren, $directPrediction ) )
 
     $pk_parents: Set( ) from accumulate(   $rel: Relation(  target isA PriorKnowledge,
@@ -141,6 +158,7 @@ rule "Prior-knowledge has a group of predictable part with at least one specific
                                             result( set )
                                          )
 then
+    logger.info( $pk.getName()+" has part group of prior-knowledge with one this group to be specific and predicted, their prediction are merged " +$predictionFromChildren+ " and we add direct observation " + $directPrediction + " to infer "+$result);
     modify( $pk ){
         setPrediction( $result )
     };
@@ -148,12 +166,56 @@ then
         final PriorKnowledge parent = (PriorKnowledge)obj;
         update(parent);
     }
+     kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("qualifier mark").setFocus();
 end
 
 
-rule "Prior-knowledge is part of another prior-knowledge [expectation]" agenda-group "prior-knowledge expectation" when
+rule "Prior-knowledge has subtype prior-knowledge [prediction]" agenda-group "prediction inference" when
     // Select any prior-knowledge
-    $pk: PriorKnowledge( )
+    $parent: PriorKnowledge(  )
+    // take the prior-knowledge list, where each concept is a child of $pk and linked by a the relation has-subtype
+    $relation: Relation(     source     isA         PriorKnowledge,
+                            target      ==          $parent,
+                            qualifiers  contains    Qualifier.GREATEST_TRUTH_DEGREE,
+                            type        ==          RelationType.SUBTYPE  )
+    $child: PriorKnowledge( this == $relation.getSource( ) )
+    // Select all predictions linked to $pk
+    $obsToPk    : Set( ) from collect( Relation(    source isA Observation,
+                                                    target == $parent,
+                                                    type ( == ObservationType.COMPUTATION || == ObservationType.ANNOTATION ) ) )
+    $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
+                                        init  ( Set set =  new HashSet(); ),
+                                        action( set.add( $rel.getSource() ); ),
+                                        result( set ) )
+    $directPrediction: TruthValueSet(  ) from accumulate(   $obs: Observation( ) from $obsSet ,
+                                                                init  ( EnumSet set =  EnumSet.noneOf(TruthValue.class);  ),
+                                                                action( set.add( $obs.getTruthValue() ); ),
+                                                                result( TruthValue.union( set ) ) )
+    // Add the direct expectation to merged set of all prediction from parents ( example: {{T}} add {N} give {{T}})
+    $result: TruthValuePowerSet( this != $parent.getPrediction(), this == TruthValuePowerSet.add( $child.getPrediction(), $directPrediction ) )
+
+    $pk_parents: Set( ) from accumulate(   $rel: Relation(  target isA PriorKnowledge, source == $parent ),
+                                            init  ( Set set =  new HashSet();  ),
+                                            action( set.add(  $rel.getTarget() );),
+                                            result( set )
+                                         )
+then
+    logger.info( $parent.getName()+" has subtype group of prior-knowledge, their greatest prediction are keep " +$child.getPrediction()+ " and we add direct observation " + $directPrediction + " to infer "+$result);
+    modify( $parent ){
+        setPrediction( $result )
+    };
+    for( final Object obj : $pk_parents){
+        final PriorKnowledge parent = (PriorKnowledge)obj;
+        update(parent);
+    }
+     kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("qualifier mark").setFocus();
+end
+
+
+
+rule "Prior-knowledge is part of another prior-knowledge [expectation]" agenda-group "expectation inference" when
+    // Select any prior-knowledge
+    $pk: PriorKnowledge( prediction != TruthValuePowerSet.n )
     // take the prior-knowledge list, where each concept is a parent of $pk and linked by a the relation part-of
     $parents: TruthValuePowerSet( size > 0 ) from accumulate(   $rel: Relation(   target  isA PriorKnowledge,
                                                                         source  ==  $pk,
@@ -163,25 +225,34 @@ rule "Prior-knowledge is part of another prior-knowledge [expectation]" agenda-g
                                                     result( set )
                                                  )
     // all parents expectation is computed
-    not( PriorKnowledge( expectation == TruthValuePowerSet.n ) from $parents )
+    forall( PriorKnowledge( expectation != TruthValuePowerSet.n ) from $parents )
 
-     // Merge all expectation from parents together (example: {{N}} merged with {{T}} give {{N},{T}})
+    // Merge all expectation from parents together (example: {{N}} merged with {{T}} give {{N},{T}})
     $expectationFromParents: TruthValuePowerSet( ) from accumulate(   $parent: PriorKnowledge( ) from $parents,
                                                                                                     init  ( EnumSet truthfulness = EnumSet.noneOf( TruthValuePowerSet.class );  ),
                                                                                                     action( truthfulness.add( $parent.getExpectation() ); ),
                                                                                                     result( TruthValuePowerSet.merge( truthfulness ) )
                                                                                                  )
-    // Select the relation which link a expectation set to $pk
-    $expToPk: Relation( target isA ExpectationSet, source == $pk, type == RelationType.EXPECTATION )
+    // Select all expectations linked to $pk
+    $obsToPk : Set( ) from collect( Relation(   source isA Observation,
+                                                target == $pk,
+                                                type ( == ObservationType.EXPERIMENTATION || == ObservationType.ANNOTATION ) ) )
+    $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
+                                            init  ( Set set =  new HashSet(); ),
+                                            action( set.add( $rel.getSource() ); ),
+                                            result( set ) )
+    $directExpectation: TruthValueSet(  ) from accumulate(   $obs: Observation( ) from $obsSet ,
+                                                                init  ( EnumSet set =  EnumSet.noneOf(TruthValue.class);  ),
+                                                                action( set.add( $obs.getTruthValue() ); ),
+                                                                result( TruthValue.union( set ) ) )
     // Add the direct expectation to merged set of all prediction from parents ( example: {{T}} add {N} give {{T}})
-    $directExpectation: TruthValueSet( this == ((ExpectationSet)$expToPk.getTarget()).getExpectation() )
     $result: TruthValuePowerSet( this != $pk.getExpectation(), this == TruthValuePowerSet.add( $expectationFromParents, $directExpectation ) )
     $pk_children: Set( ) from accumulate(  $rel: Relation(  source isA PriorKnowledge.class, target == $pk ),
                                             init  ( Set set =  new HashSet();  ),
                                             action( set.add(  $rel.getSource() ); ),
-                                            result( set )
-                                         )
+                                            result( set ) )
 then
+    logger.info( $pk.getName()+" is part of one or more parents prior-knowledge their expectation are merged " +$expectationFromParents+ " and we add direct observation " + $directExpectation + " to infer "+$result);
     modify( $pk ){
         setExpectation( $result )
     };
@@ -189,86 +260,46 @@ then
         final PriorKnowledge child = (PriorKnowledge)obj;
         update(child);
     }
+     kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("conclusion").setFocus();
+     kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("prediction inference").setFocus();
 end
 
 
-rule "Prior-knowledge has subtype prior-knowledge [prediction]" agenda-group "prior-knowledge prediction" when
-    // Select any prior-knowledge
-    $pk: PriorKnowledge(  )
-    // take the prior-knowledge list, where each concept is a child of $pk and linked by a the relation has-subtype
-    $pk_children: Set( size > 0) from accumulate(   $rel: Relation( source   isA PriorKnowledge,
-                                                                    target    == $pk,
-                                                                    type      == RelationType.SUBTYPE  ),
-                                                    init  ( Set set =  new HashSet();  ),
-                                                    action( set.add( $rel.getSource() ); ),
-                                                    result( set )
-                                                 )
-
-    // all children prediction is computed
-    not( PriorKnowledge( prediction == TruthValuePowerSet.n ) from $pk_children )
-
-    // Choice the prediction with greatest truth degree  from children together (example: {{N}}, {{T}}, {{T,F}} choice is {{{T}} )
-    $predictionFromChildren: TruthValuePowerSet( ) from accumulate(  $child: PriorKnowledge( ) from $pk_children,
-                                                                    init  ( EnumSet truthfulness = EnumSet.noneOf( TruthValuePowerSet.class );  ),
-                                                                    action( truthfulness.add( $child.getPrediction() ); ),
-                                                                    result( TruthValuePowerSet.choice( truthfulness ) )
-                                                                 )
-
-    // Select the relation which link a expectation set to $pk
-    $predToPk: Relation( source isA PredictionSet, target == $pk, type == RelationType.PREDICTION )
-    // Add the direct expectation to merged set of all prediction from parents ( example: {{T}} add {N} give {{T}})
-    $directPrediction: TruthValueSet( this == ((PredictionSet)$predToPk.getSource()).getPrediction() )
-    $result: TruthValuePowerSet( this != $pk.getPrediction(), this == TruthValuePowerSet.add( $predictionFromChildren, $directPrediction ) )
-
-    $pk_parents: Set( ) from accumulate(   $rel: Relation(  target isA PriorKnowledge, source == $pk ),
-                                            init  ( Set set =  new HashSet();  ),
-                                            action( set.add(  $rel.getTarget() );),
-                                            result( set )
-                                         )
-then
-    modify( $pk ){
-        setPrediction( $result )
-    };
-    for( final Object obj : $pk_parents){
-        final PriorKnowledge parent = (PriorKnowledge)obj;
-        update(parent);
-    }
-end
-
-
-rule "Prior-knowledge is subtype of another prior-knowledge and has one of the greatest prediction truth value [expectation]" agenda-group "prior-knowledge expectation" when
+rule "Prior-knowledge is subtype of another prior-knowledge and has one of the greatest prediction truth value [expectation]" agenda-group "expectation inference" when
     // Select any prior-knowledge
     $pk: PriorKnowledge( prediction != TruthValuePowerSet.n )
+    // $pk has the one of greatest truth value degree from his prediction compared to all others children
+    $relation: Relation(    target      isA PriorKnowledge,
+                            source      ==  $pk,
+                            qualifiers  contains  Qualifier.GREATEST_TRUTH_DEGREE,
+                            type        ==  RelationType.SUBTYPE )
     // Select all parents of $pk
     $parents: Set( ) from accumulate(    $rel: Relation(  target isA PriorKnowledge, source == $pk, type == RelationType.SUBTYPE ),
                                                     init  ( Set set =  new HashSet();  ),
                                                     action( set.add(  $rel.getTarget() ); ),
                                                     result( set ) )
     // Parent expectation have not a false truth value
-    not( PriorKnowledge( expectation ( == TruthValuePowerSet.F || == TruthValuePowerSet.n ) ) from $parents )
+    forall( PriorKnowledge( expectation ( != TruthValuePowerSet.F && != TruthValuePowerSet.n ) ) from $parents )
 
      // Merge all expectation from parents together (example: {{N}} merged with {{T}} give {{N},{T}})
     $expectationFromParents: TruthValuePowerSet( ) from accumulate( $parent: PriorKnowledge( ) from $parents,
                                                                     init  ( EnumSet truthfulness = EnumSet.noneOf( TruthValuePowerSet.class );  ),
                                                                     action( truthfulness.add( $parent.getExpectation() ); ),
                                                                     result( TruthValuePowerSet.merge( truthfulness ) ) )
-    // take the parent prior-knowledge subtype-of $pk
-    $relation: Relation(    target  isA PriorKnowledge,
-                            source  ==  $pk,
-                            type    ==  RelationType.SUBTYPE )
-    $parent: PriorKnowledge( this == $relation.getTarget() )
-    // Select all children of parent, $pk included
-    $children_of_parent: Set( ) from accumulate(    $rel: Relation(  source isA PriorKnowledge, target == $parent ),
-                                                    init  ( Set set =  new HashSet();  ),
-                                                    action( set.add(  $rel.getSource() ); ),
-                                                    result( set ) )
-    // $pk has the one of greatest truth value degree from his prediction compared to all others children
-    forall( PriorKnowledge( prediction.getTruth() <= $pk.getPrediction().getTruth(), prediction != TruthValuePowerSet.n ) from $children_of_parent )
+    // Select all expectations linked to $pk
+    $obsToPk : Set( ) from collect( Relation(  source isA Observation,
+                                                        target == $pk,
+                                                        type ( == ObservationType.EXPERIMENTATION || == ObservationType.ANNOTATION ) ) )
+    $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
+                                            init  ( Set set =  new HashSet(); ),
+                                            action( set.add( $rel.getSource() ); ),
+                                            result( set ) )
+    $directExpectation: TruthValueSet(  ) from accumulate(   $obs: Observation( ) from $obsSet ,
+                                                                init  ( EnumSet set =  EnumSet.noneOf(TruthValue.class);  ),
+                                                                action( set.add( $obs.getTruthValue() ); ),
+                                                                result( TruthValue.union( set ) ) )
 
-    // Select the relation which link a expectation set to $pk
-    $expToPk: Relation( target isA ExpectationSet, source == $pk, type == RelationType.EXPECTATION )
     // Add the direct expectation to merged set of all prediction from parents ( example: {{T}} add {N} give {{T}})
-    $directExpectation: TruthValueSet( this == ((ExpectationSet)$expToPk.getTarget()).getExpectation() )
     $result: TruthValuePowerSet( this != $pk.getExpectation(), this == TruthValuePowerSet.add( $expectationFromParents, $directExpectation ) )
 
     $pk_children: Set( ) from accumulate(  $rel: Relation(  source isA PriorKnowledge, target == $pk ),
@@ -276,6 +307,7 @@ rule "Prior-knowledge is subtype of another prior-knowledge and has one of the g
                                             action( set.add(  $rel.getSource() ); ),
                                             result( set ) )
 then
+    logger.info( $pk.getName()+" is subtype of one or more parents prior-knowledge and has the greatest prediction with at least one parent their expectation are merged " +$expectationFromParents+ " and we add direct observation " + $directExpectation + " to infer "+$result);
     modify( $pk ){
         setExpectation( $result )
     };
@@ -283,44 +315,50 @@ then
         final PriorKnowledge child = (PriorKnowledge)obj;
         update(child);
     }
+     kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("conclusion").setFocus();
+     kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("prediction inference").setFocus();
 end
 
 
-rule "Prior-knowledge is subtype of another prior-knowledge and is not one of the greatest prediction truth value [expectation]" agenda-group "prior-knowledge expectation" when
+rule "Prior-knowledge is subtype of another prior-knowledge and is not one of the greatest prediction truth value [expectation]" agenda-group "expectation inference" when
     // Select any prior-knowledge
     $pk: PriorKnowledge( prediction != TruthValuePowerSet.n )
+    not( Relation(   target      isA PriorKnowledge,
+                     source      ==  $pk,
+                     qualifiers  contains  Qualifier.GREATEST_TRUTH_DEGREE,
+                     type        ==  RelationType.SUBTYPE ))
+    // $pk has the one of greatest truth value degree from his prediction compared to all others children
+    $relation: Relation(    target      isA PriorKnowledge,
+                            source      ==  $pk,
+                            qualifiers  not contains  Qualifier.GREATEST_TRUTH_DEGREE,
+                            type        ==  RelationType.SUBTYPE )
     // Select all parents of $pk
     $parents: Set( ) from accumulate(    $rel: Relation(  target isA PriorKnowledge, source == $pk, type == RelationType.SUBTYPE ),
                                                     init  ( Set set =  new HashSet();  ),
                                                     action( set.add(  $rel.getTarget() ); ),
                                                     result( set ) )
     // Parent expectation have not a false truth value
-    not( PriorKnowledge( expectation ( == TruthValuePowerSet.F || == TruthValuePowerSet.n ) ) from $parents )
+    forall( PriorKnowledge( expectation ( != TruthValuePowerSet.F && != TruthValuePowerSet.n ) ) from $parents )
 
     // Merge all expectation from parents together (example: {{N}} merged with {{T}} give {{N},{T}})
     $expectationFromParents: TruthValuePowerSet( ) from accumulate( $parent: PriorKnowledge( ) from $parents,
                                                                     init  ( EnumSet truthfulness = EnumSet.noneOf( TruthValuePowerSet.class );  ),
                                                                     action( truthfulness.add( $parent.getExpectation() ); ),
                                                                     result( TruthValuePowerSet.merge( truthfulness ) ) )
-    // take the parent prior-knowledge subtype-of $pk
-    $relation: Relation(    target  isA PriorKnowledge,
-                            source  ==  $pk,
-                            type    ==  RelationType.SUBTYPE )
-    // Parent expectation need to have a different truth value than $pk
-    $parent: PriorKnowledge( this == $relation.getTarget() )
-    // Select all children of parent, $pk included
-    $children_of_parent: Set( ) from accumulate(  $rel: Relation(  source isA PriorKnowledge, target == $parent ),
-                                                init  ( Set set =  new HashSet();  ),
-                                                action( set.add(  $rel.getSource() ); ),
-                                                result( set )
-                                             )
-    forall( PriorKnowledge( prediction != TruthValuePowerSet.n ) from $children_of_parent )
-    // $pk has not one of greatest truth value degree from his prediction compared to all others children
-    exists( PriorKnowledge( prediction.getTruth() > $pk.getPrediction().getTruth() ) from $children_of_parent )
-    // Select the relation which link a expectation set to $pk
-    $expToPk: Relation( target isA ExpectationSet, source == $pk, type == RelationType.EXPECTATION )
+    // Select all expectations linked to $pk
+    $obsToPk : Set( ) from collect( Relation(  source isA Observation.class,
+                                                        target == $pk,
+                                                        type ( == ObservationType.EXPERIMENTATION || == ObservationType.ANNOTATION ) ) )
+    $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
+                                            init  ( Set set =  new HashSet(); ),
+                                            action( set.add( $rel.getSource() ); ),
+                                            result( set ) )
+    $directExpectation: TruthValueSet(  ) from accumulate(   $obs: Observation( ) from $obsSet ,
+                                                                init  ( EnumSet set =  EnumSet.noneOf(TruthValue.class);  ),
+                                                                action( set.add( $obs.getTruthValue() ); ),
+                                                                result( TruthValue.union( set ) ) )
+
     // Add the direct expectation to merged set of all prediction from parents ( example: {{T}} add {N} give {{T}})
-    $directExpectation: TruthValueSet( this == ((ExpectationSet)$expToPk.getTarget()).getExpectation() )
     $result: TruthValuePowerSet( this != $pk.getExpectation(), this == TruthValuePowerSet.add( TruthValuePowerSet.n, $directExpectation ) )
 
     $pk_children: Set( ) from accumulate(  $rel: Relation(  source isA PriorKnowledge.class, target == $pk ),
@@ -329,6 +367,7 @@ rule "Prior-knowledge is subtype of another prior-knowledge and is not one of th
                                             result( set )
                                          )
 then
+    logger.info( $pk.getName()+" is subtype of one or more parents prior-knowledge and has not the greatest prediction with at least one parent their expectation are not merged " +$expectationFromParents+ ", but we add direct observation " + $directExpectation + " to infer "+$result);
     modify( $pk ){
         setExpectation( $result )
     };
@@ -336,23 +375,34 @@ then
         final PriorKnowledge child = (PriorKnowledge)obj;
         update(child);
     }
+     kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("conclusion").setFocus();
+     kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("prediction inference").setFocus();
 end
 
 
 
 
-rule "Prior-knowledge is subtype of an not  an expected prior-knowledge [expectation]" agenda-group "prior-knowledge expectation" when
+rule "Prior-knowledge is subtype of an not  an expected prior-knowledge [expectation]" agenda-group "expectation inference" when
     // Select a prior-knowledge with a prediction different of {{F}}
-    $pk: PriorKnowledge( expectation != TruthValuePowerSet.F )
+    $pk: PriorKnowledge( )
     $relation: Relation(    target  isA PriorKnowledge,
                             source  ==  $pk,
                             type    ==  RelationType.SUBTYPE )
     // take the parent prior-knowledge subtype-of $pk
     $parent: PriorKnowledge( this == $relation.getTarget(), expectation == TruthValuePowerSet.F)
-    // Select the relation which link a expectation set to $pk
-    $expToPk: Relation( target isA ExpectationSet, source == $pk, type == RelationType.EXPECTATION )
+    // Select all expectations linked to $pk
+    $obsToPk : Set( ) from collect( Relation(  source isA Observation.class,
+                                                        target == $pk,
+                                                        type ( == ObservationType.EXPERIMENTATION || == ObservationType.ANNOTATION ) ) )
+    $obsSet : Set() from accumulate( $rel: Relation(  ) from $obsToPk,
+                                            init  ( Set set =  new HashSet(); ),
+                                            action( set.add( $rel.getSource() ); ),
+                                            result( set ) )
+    $directExpectation: TruthValueSet(  ) from accumulate(   $obs: Observation( ) from $obsSet ,
+                                                                init  ( EnumSet set =  EnumSet.noneOf(TruthValue.class);  ),
+                                                                action( set.add( $obs.getTruthValue() ); ),
+                                                                result( TruthValue.union( set ) ) )
     // Add the direct expectation to parent expectation ( example: {{T}} add {N} give {{T}})
-    $directExpectation: TruthValueSet( this == ((ExpectationSet)$expToPk.getTarget()).getExpectation() )
     $result: TruthValuePowerSet( this != $pk.getExpectation(), this == TruthValuePowerSet.add( $parent.getExpectation(), $directExpectation ) )
 
     $pk_children: Set( ) from accumulate(  $rel: Relation(  source isA PriorKnowledge.class, target == $pk ),
@@ -361,6 +411,7 @@ rule "Prior-knowledge is subtype of an not  an expected prior-knowledge [expecta
                                             result( set )
                                          )
 then
+    logger.info( $pk.getName()+" is subtype of prior-knowledge which is strongly not expected we infer this expectation " +$parent.getExpectation()+ " and we add direct observation " + $directExpectation + " to infer "+$result);
     modify( $pk ){
         setExpectation( $result )
     };
@@ -368,4 +419,6 @@ then
         final PriorKnowledge child = (PriorKnowledge)obj;
         update(child);
     }
+     kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("conclusion").setFocus();
+     kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("prediction inference").setFocus();
 end

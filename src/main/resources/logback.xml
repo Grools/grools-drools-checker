@@ -7,7 +7,6 @@
         </encoder>
     </appender>
     <!--<logger name="org.drools" level="trace"/>-->
-    <logger name="gr.cea.ig" level="trace"/>
     <root level="debug">
         <appender-ref ref="STDOUT" />
     </root>

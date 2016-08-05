@@ -36,8 +36,8 @@
   ~
   -->
 <kmodule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://jboss.org/kie/6.0.0/kmodule">
-    <kbase name="normal-concept-reasoning"                  packages="fr.cea.ig.grools.drools.normal       , fr.cea.ig.grools.drools.common"></kbase>
-    <kbase name="normal-specific-concept-reasoning"         packages="fr.cea.ig.grools.drools.normal       , fr.cea.ig.grools.drools.common, fr.cea.ig.grools.drools.specific"></kbase>
-    <kbase name="dispensable-concept-reasoning"             packages="fr.cea.ig.grools.drools.dispensable  , fr.cea.ig.grools.drools.common"></kbase>
-    <kbase name="dispensable-specific-concept-reasoning"    packages="fr.cea.ig.grools.drools.dispensable  , fr.cea.ig.grools.drools.common, fr.cea.ig.grools.drools.specific"></kbase>
+    <kbase name="normal-concept-reasoning"                  packages="fr.cea.ig.grools.drools.normal       , fr.cea.ig.grools.drools.common" />
+    <kbase name="normal-specific-concept-reasoning"         packages="fr.cea.ig.grools.drools.normal       , fr.cea.ig.grools.drools.common, fr.cea.ig.grools.drools.specific" />
+    <kbase name="dispensable-concept-reasoning"             packages="fr.cea.ig.grools.drools.dispensable  , fr.cea.ig.grools.drools.common" />
+    <kbase name="dispensable-specific-concept-reasoning"    packages="fr.cea.ig.grools.drools.dispensable  , fr.cea.ig.grools.drools.common, fr.cea.ig.grools.drools.specific" />
 </kmodule>

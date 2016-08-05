@@ -17,9 +17,11 @@ import fr.cea.ig.grools.logic.TruthValue;
 import fr.cea.ig.grools.logic.TruthValuePowerSet;
 import fr.cea.ig.grools.logic.TruthValueSet;
 import lombok.NonNull;
+import org.drools.KnowledgeBase;
 import org.kie.api.KieBase;
 import org.kie.api.KieBaseConfiguration;
 import org.kie.api.KieServices;
+import org.kie.api.conf.EventProcessingOption;
 import org.kie.api.conf.MBeansOption;
 import org.kie.api.marshalling.Marshaller;
 import org.kie.api.marshalling.ObjectMarshallingStrategy;
@@ -58,10 +60,9 @@ public final class ReasonerImpl implements Reasoner {
     private final static String KNAME   = "concept-reasoning";
     private final static transient Logger LOGGER  = (Logger) LoggerFactory.getLogger( ReasonerImpl.class );
 
-    private final KieSession    kieSession;
-    private final KieBase       kbase;
-    private final Mode          mode;
-    private final Verbosity     verbosity;
+    private final KieSession reasoner;
+    private final Mode       mode;
+    private final Verbosity  verbosity;
 
     private static String getKname( @NonNull final Mode mode){
         return mode.getMode() + '-' + KNAME;
@@ -69,7 +70,6 @@ public final class ReasonerImpl implements Reasoner {
 
 
     private static <T> void storeQueryResults( @NonNull final QueryResults rows, @NonNull final String field, @NonNull final Set<T> results){
-
         for( final QueryResultsRow r : rows){
             final Object object = r.get( field );
             assert( object instanceof Set<?> );
@@ -90,31 +90,31 @@ public final class ReasonerImpl implements Reasoner {
     }
 
     private <T> T query( @NonNull final String queryName, @NonNull final String field, Class<T> type){
-        final QueryResults rows = kieSession.getQueryResults( queryName );
+        final QueryResults rows = reasoner.getQueryResults( queryName );
         return getResult(rows, field, type);
     }
 
 
     private <T> T query( @NonNull final String queryName, @NonNull final String field, Class<T> type, @NonNull final Object... parameters){
-        final QueryResults rows = kieSession.getQueryResults( queryName, parameters );
+        final QueryResults rows = reasoner.getQueryResults( queryName, parameters );
         return getResult(rows, field, type);
     }
 
 
     private <T> void query( @NonNull final String queryName, @NonNull final String field, @NonNull final Set<T> results){
-        final QueryResults  rows    = kieSession.getQueryResults( queryName );
+        final QueryResults  rows    = reasoner.getQueryResults( queryName );
         storeQueryResults(rows, field, results);
     }
 
 
     private <T> void query( @NonNull final String queryName, @NonNull final Object parameter, @NonNull final String field, @NonNull final Set<T> results){
-        final QueryResults rows    = kieSession.getQueryResults( queryName, parameter );
+        final QueryResults rows    = reasoner.getQueryResults( queryName, parameter );
         storeQueryResults(rows, field, results);
     }
 
 
     private <T> void query( @NonNull final String queryName, @NonNull final Object parameter1, @NonNull final Object parameter2, @NonNull final String field, @NonNull final Set<T> results){
-        final QueryResults rows    = kieSession.getQueryResults( queryName, parameter1, parameter2 );
+        final QueryResults rows    = reasoner.getQueryResults( queryName, parameter1, parameter2 );
         storeQueryResults(rows, field, results);
     }
 
@@ -128,28 +128,27 @@ public final class ReasonerImpl implements Reasoner {
                 root.setLevel( Level.INFO);
                 break;
             case MEDIUM:
-                kieSession.addEventListener( new LogRuleDRL() );
-                kieSession.addEventListener( new LogAgendaDRL() );
+                reasoner.addEventListener( new LogRuleDRL() );
+                reasoner.addEventListener( new LogAgendaDRL() );
                 root.setLevel( Level.DEBUG);
                 break;
             case HIGHT:
-                kieSession.addEventListener( new LogRuleDRL() );
-                kieSession.addEventListener( new LogAgendaDRL() );
+                reasoner.addEventListener( new LogAgendaDRL() );
                 root.setLevel( Level.TRACE);
                 break;
         }
-        kieSession.setGlobal("logger",LOGGER);
-        kieSession.insert( mode );
+        reasoner.setGlobal( "logger", LOGGER );
+        reasoner.insert( mode );
         final EnumSet<TruthValuePowerSet> tvpset = EnumSet.allOf(TruthValuePowerSet.class);
-        tvpset.forEach(kieSession::insert);
+        tvpset.forEach( reasoner::insert );
         final EnumSet<TruthValueSet> tvset = EnumSet.allOf(TruthValueSet.class);
-        tvset.forEach(kieSession::insert);
+        tvset.forEach( reasoner::insert );
         final EnumSet<TruthValue> tv = EnumSet.allOf( TruthValue.class);
-        tv.forEach(kieSession::insert);
+        tv.forEach( reasoner::insert );
         final EnumSet<ObservationType> observationTypes = EnumSet.allOf( ObservationType.class);
-        observationTypes.forEach(kieSession::insert);
+        observationTypes.forEach( reasoner::insert );
         final EnumSet<RelationType> relationTypes = EnumSet.allOf( RelationType.class);
-        relationTypes.forEach(kieSession::insert);
+        relationTypes.forEach( reasoner::insert );
 
 
     }
@@ -193,34 +192,28 @@ public final class ReasonerImpl implements Reasoner {
         //kieConf.setProperty("drools.propertySpecific", "ALWAYS");
         //kbaseConf.setProperty("drools.propertySpecific", "ALWAYS");
         //kbaseConf.setOption( EventProcessingOption.CLOUD );
-        //kbaseConf.setOption(MaxThreadsOption.get(8));
-        //kbaseConf.setOption( EventProcessingOption.STREAM );
+        // kbaseConf.setOption( MaxThreadsOption.get( 8 ) );
+        kbaseConf.setOption( EventProcessingOption.STREAM );
         kbaseConf.setOption(RuleEngineOption.PHREAK );
         if( verbosity.compare( Verbosity.MEDIUM ) >= 0 )
             kbaseConf.setOption( MBeansOption.ENABLED );
-        final KieBase kbase       = kContainer.newKieBase(getKname(m), kbaseConf);
-        //final KieSession kieSession = kbase.newKieSession(kieConf, null);
-        final KieSession kieSession = kbase.newKieSession( );
-        this.kbase      = kbase;
-        this.kieSession = kieSession;
+        this.reasoner   = kContainer.newKieBase(getKname(m), kbaseConf).newKieSession( );
+        this.mode       = m;
+        this.verbosity  = verbosity;
+        init();
+    }
+
+    public ReasonerImpl( @NonNull final KieSession kieSession, @NonNull final Mode m, Verbosity verbosity){
+        this.reasoner   = kieSession;
         this.mode       = m;
         this.verbosity  = verbosity;
         init();
     }
 
 
-    public ReasonerImpl(@NonNull final KieBase kbase, @NonNull final KieSession kieSession, @NonNull final Mode mode ){
-        this.kbase      = kbase;
-        this.kieSession = kieSession;
-        this.mode       = mode;
-        this.verbosity  = Verbosity.QUIET;
-        init();
-    }
-
-
     @Override
     public void addVariantMode(@NonNull final VariantMode... variants ) {
-        final EntryPoint ep = kieSession.getEntryPoint("add variant mode");
+        final EntryPoint ep = reasoner.getEntryPoint( "add variant mode" );
         Arrays.stream(variants).forEach(ep::insert);
         reasoning();
     }
@@ -228,7 +221,7 @@ public final class ReasonerImpl implements Reasoner {
 
     @Override
     public void removeVariantMode(@NonNull final VariantMode... variants ) {
-        final EntryPoint ep = kieSession.getEntryPoint("remove variant mode");
+        final EntryPoint ep = reasoner.getEntryPoint( "remove variant mode" );
         Arrays.stream(variants).forEach(ep::insert);
         reasoning();
     }
@@ -237,21 +230,20 @@ public final class ReasonerImpl implements Reasoner {
     @Override
     public void insert(@NonNull final Object... data) {
         Arrays.stream(data)
-              .forEach( (i) -> register(i, verbosity, kieSession) );
+              .forEach( (i) -> register( i, verbosity, reasoner ) );
     }
 
 
     @Override
     public void insert(@NonNull final Collection<?> data) {
-        data.stream()
-            .forEach( (i) -> register(i, verbosity, kieSession) );
+        data.forEach( ( i ) -> register( i, verbosity, reasoner ) );
     }
 
 
     @Override
     public void delete(@NonNull final Object... data) {
         for( final Object obj : data){
-            final FactHandle fact = kieSession.getFactHandle( obj );
+            final FactHandle fact = reasoner.getFactHandle( obj );
             if( fact != null ){
                 if( obj instanceof Concept) {
                     final Concept concept = (Concept) obj;
@@ -260,7 +252,7 @@ public final class ReasonerImpl implements Reasoner {
                     delete(sources);
                     delete(targets);
                 }
-                kieSession.delete( fact );
+                reasoner.delete( fact );
             }
         }
     }
@@ -269,7 +261,7 @@ public final class ReasonerImpl implements Reasoner {
     @Override
     public void delete(@NonNull final Collection<?> data) {
         for( final Object obj : data){
-            final FactHandle fact = kieSession.getFactHandle( obj );
+            final FactHandle fact = reasoner.getFactHandle( obj );
             if( fact != null ){
                 if( obj instanceof Concept) {
                     final Concept concept = (Concept) obj;
@@ -278,7 +270,7 @@ public final class ReasonerImpl implements Reasoner {
                     delete(sources);
                     delete(targets);
                 }
-                kieSession.delete( fact );
+                reasoner.delete( fact );
             }
         }
     }
@@ -396,23 +388,23 @@ public final class ReasonerImpl implements Reasoner {
 
     @Override
     public void reasoning() {
-        kieSession.getAgenda( ).getAgendaGroup( "specific mark" ).setFocus( );
+        reasoner.getAgenda( ).getAgendaGroup( "specific mark" ).setFocus( );
         // fix relations between concept
-        kieSession.getAgenda( ).getAgendaGroup( "graph-fixer" ).setFocus( );
-        kieSession.fireAllRules( );
+        reasoner.getAgenda( ).getAgendaGroup( "graph-fixer" ).setFocus( );
+        reasoner.fireAllRules( );
 
         // remove the agenda
-        kieSession.getAgenda( ).getAgendaGroup( "graph-fixer" ).clear( );
-        kieSession.getAgenda( ).getAgendaGroup( "specific mark" ).clear( );
+        reasoner.getAgenda( ).getAgendaGroup( "graph-fixer" ).clear( );
+        reasoner.getAgenda( ).getAgendaGroup( "specific mark" ).clear( );
 
         // Infer prediction corresponding to leaf nodes, Infer expectation corresponding to top nodes
         // follow by the post prediction agenda, example of use: search specific relations
-        kieSession.getAgenda( ).getAgendaGroup( "observation" ).setFocus( );
-        kieSession.getAgenda( ).getAgendaGroup( "qualifier mark" ).setFocus( );
-        kieSession.getAgenda( ).getAgendaGroup( "prediction inference" ).setFocus( );
-        kieSession.getAgenda( ).getAgendaGroup( "expectation inference" ).setFocus( );
-        kieSession.getAgenda( ).getAgendaGroup( "conclusion" ).setFocus( );
-        kieSession.fireAllRules( );
+        reasoner.getAgenda( ).getAgendaGroup( "observation" ).setFocus( );
+        reasoner.getAgenda( ).getAgendaGroup( "qualifier mark" ).setFocus( );
+        reasoner.getAgenda( ).getAgendaGroup( "prediction inference" ).setFocus( );
+        reasoner.getAgenda( ).getAgendaGroup( "expectation inference" ).setFocus( );
+        reasoner.getAgenda( ).getAgendaGroup( "conclusion" ).setFocus( );
+        reasoner.fireAllRules( );
     }
 
 
@@ -420,19 +412,18 @@ public final class ReasonerImpl implements Reasoner {
     public Reasoner copy(){
         KieSession ksessionCopy;
         try {
-            final Marshaller marshaller= MarshallerFactory.newMarshaller(kbase);
+            final Marshaller marshaller= MarshallerFactory.newMarshaller(reasoner.getKieBase());
             final ByteArrayOutputStream o         = new ByteArrayOutputStream();
-            marshaller.marshall(o,kieSession);
-            ksessionCopy = marshaller.unmarshall(
-                                                    new ByteArrayInputStream( o.toByteArray() ),
-                                                    kieSession.getSessionConfiguration(),
+            marshaller.marshall( o, reasoner );
+            ksessionCopy = marshaller.unmarshall(   new ByteArrayInputStream( o.toByteArray() ),
+                                                    reasoner.getSessionConfiguration( ),
                                                     KnowledgeBaseFactory.newEnvironment()
                                                 );
         }
         catch (  Exception e) {
             throw new RuntimeException(e);
         }
-        return new ReasonerImpl(kbase, ksessionCopy, mode);
+        return new ReasonerImpl( ksessionCopy, mode, verbosity);
     }
 
 
@@ -444,21 +435,21 @@ public final class ReasonerImpl implements Reasoner {
 
     @Override
     public void close() throws Exception {
-        kieSession.dispose();
+        reasoner.dispose( );
     }
 
     @Override
     public void save( @NonNull final File file) throws IOException {
         final ObjectMarshallingStrategyAcceptor acceptor    = MarshallerFactory.newClassFilterAcceptor(new String[] { "*.*" });
         final ObjectMarshallingStrategy         strategy    = MarshallerFactory.newSerializeMarshallingStrategy(acceptor);
-        final Marshaller                        marshaller  = MarshallerFactory.newMarshaller(kbase, new ObjectMarshallingStrategy[] { strategy });
+        final Marshaller                        marshaller  = MarshallerFactory.newMarshaller(reasoner.getKieBase(), new ObjectMarshallingStrategy[] { strategy });
         final FileOutputStream                  fos         = new FileOutputStream(file);
         final ObjectOutputStream                oos         = new ObjectOutputStream(fos);
-        final KieSessionConfiguration           kconf       = kieSession.getSessionConfiguration();
-        oos.writeObject(kieSession.getKieBase());
-        oos.writeObject(kconf);
+        oos.writeObject(reasoner.getKieBase());
+        oos.writeObject(reasoner.getSessionConfiguration());
         oos.writeObject(mode);
-        marshaller.marshall(fos, kieSession);
+        oos.writeObject(verbosity);
+        marshaller.marshall( fos, reasoner );
         oos.close();
         fos.close();
     }

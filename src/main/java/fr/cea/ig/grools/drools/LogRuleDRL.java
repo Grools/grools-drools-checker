@@ -54,21 +54,24 @@ import org.slf4j.LoggerFactory;
  * @enduml
  */
 public final class LogRuleDRL implements RuleRuntimeEventListener{
-    protected static final transient Logger logger = LoggerFactory.getLogger(LogRuleDRL.class);
+    private static final transient Logger logger = LoggerFactory.getLogger( LogRuleDRL.class );
     public LogRuleDRL() {
     }
     public void objectInserted(ObjectInsertedEvent event) {
-        StringBuilder sb = new StringBuilder("Object Inserted -> ");
+        StringBuilder sb = new StringBuilder('['+event.getRule().getName()+']');
+        sb.append( " Insert -> " );
         sb.append(event.getObject());
         logger.debug(sb.toString());
     }
     public void objectUpdated(ObjectUpdatedEvent event) {
-        StringBuilder sb = new StringBuilder("Object Updated -> ");
+        StringBuilder sb = new StringBuilder('['+event.getRule().getName()+']');
+        sb.append(" Update -> ");
         sb.append(event.getObject());
         logger.debug(sb.toString());
     }
     public void objectDeleted(ObjectDeletedEvent event) {
-        StringBuilder sb = new StringBuilder("Object Deleted -> ");
+        StringBuilder sb = new StringBuilder('['+event.getRule().getName()+']');
+        sb.append(" Delete -> ");
         sb.append(event.getOldObject());
         logger.debug(sb.toString());
     }

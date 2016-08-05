@@ -53,7 +53,7 @@ global ch.qos.logback.classic.Logger logger;
 dialect "java"
 
 
-rule "Prior-knowledge has a group of predictable part with any specific predicted [prediction]" agenda-group "prediction inference" when
+rule "Prior-knowledge has a group of predictable part with any specific predicted [prediction]" no-loop true agenda-group "prediction inference" when
     // Select any prior-knowledge
     $pk: PriorKnowledge()
     // take the prior-knowledge list, where each concept is a child of $pk and linked by a the relation part-of
@@ -111,7 +111,7 @@ then
 end
 
 
-rule "Prior-knowledge has a group of predictable part with at least one specific and predicted [prediction]" agenda-group "prediction inference" when
+rule "Prior-knowledge has a group of predictable part with at least one specific and predicted [prediction]" no-loop true agenda-group "prediction inference" when
     // Select any prior-knowledge
     $pk: PriorKnowledge()
     // take the prior-knowledge list, where each concept is a child of $pk and linked by a the relation part-of
@@ -170,7 +170,7 @@ then
 end
 
 
-rule "Prior-knowledge has subtype prior-knowledge [prediction]" agenda-group "prediction inference" when
+rule "Prior-knowledge has subtype prior-knowledge [prediction]" no-loop true agenda-group "prediction inference" when
     // Select any prior-knowledge
     $parent: PriorKnowledge(  )
     // take the prior-knowledge list, where each concept is a child of $pk and linked by a the relation has-subtype
@@ -213,7 +213,7 @@ end
 
 
 
-rule "Prior-knowledge is part of another prior-knowledge [expectation]" agenda-group "expectation inference" when
+rule "Prior-knowledge is part of another prior-knowledge [expectation]" no-loop true agenda-group "expectation inference" when
     // Select any prior-knowledge
     $pk: PriorKnowledge( prediction != TruthValuePowerSet.n )
     // take the prior-knowledge list, where each concept is a parent of $pk and linked by a the relation part-of
@@ -265,7 +265,7 @@ then
 end
 
 
-rule "Prior-knowledge is subtype of another prior-knowledge and has one of the greatest prediction truth value [expectation]" agenda-group "expectation inference" when
+rule "Prior-knowledge is subtype of another prior-knowledge and has one of the greatest prediction truth value [expectation]" no-loop true agenda-group "expectation inference" when
     // Select any prior-knowledge
     $pk: PriorKnowledge( prediction != TruthValuePowerSet.n )
     // $pk has the one of greatest truth value degree from his prediction compared to all others children
@@ -320,7 +320,7 @@ then
 end
 
 
-rule "Prior-knowledge is subtype of another prior-knowledge and is not one of the greatest prediction truth value [expectation]" agenda-group "expectation inference" when
+rule "Prior-knowledge is subtype of another prior-knowledge and is not one of the greatest prediction truth value [expectation]" no-loop true agenda-group "expectation inference" when
     // Select any prior-knowledge
     $pk: PriorKnowledge( prediction != TruthValuePowerSet.n )
     not( Relation(   target      isA PriorKnowledge,
@@ -382,7 +382,7 @@ end
 
 
 
-rule "Prior-knowledge is subtype of an not  an expected prior-knowledge [expectation]" agenda-group "expectation inference" when
+rule "Prior-knowledge is subtype of an not  an expected prior-knowledge [expectation]" no-loop true agenda-group "expectation inference" when
     // Select a prior-knowledge with a prediction different of {{F}}
     $pk: PriorKnowledge( )
     $relation: Relation(    target  isA PriorKnowledge,

@@ -61,7 +61,7 @@ public class NormalTest {
 
     @Before
     public void setUp(){
-        reasoner = new ReasonerImpl( Mode.NORMAL, Verbosity.MEDIUM);
+        reasoner = new ReasonerImpl( Mode.NORMAL, Verbosity.HIGHT);
     }
 
     @Test

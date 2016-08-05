@@ -51,7 +51,7 @@ global ch.qos.logback.classic.Logger logger;
 
 dialect "java"
 
-rule "PriorKnowledge is a leaf"  agenda-group "observation" when
+rule "PriorKnowledge is a leaf" no-loop true agenda-group "observation" when
     // Select any prior-knowledge
     $pk: PriorKnowledge()
     not( Relation( source isA PriorKnowledge, target == $pk, type ( == RelationType.PART || == RelationType.SUBTYPE ) ) )
@@ -69,7 +69,7 @@ rule "PriorKnowledge is a leaf"  agenda-group "observation" when
                                                                 result( TruthValue.union( set ) ) )
     $result: TruthValuePowerSet( this != $pk.getPrediction(), this == TruthValueSet.union( $directPrediction ) )
 then
-    logger.debug( $pk.getName()+" is leaf of and his direct prediction is " +$directPrediction );
+    logger.debug( $pk.getName()+" is leaf and his direct prediction is " +$directPrediction );
     modify( $pk ){
         setPrediction( $result )
     };
@@ -77,7 +77,7 @@ then
     kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("qualifier mark").setFocus();
 end
 
-rule "Expectable is a top"  agenda-group "observation" when
+rule "Expectable is a top" no-loop true  agenda-group "observation" when
     // Select any prior-knowledge
     $pk: PriorKnowledge()
     not( Relation( target isA PriorKnowledge, source == $pk, type ( == RelationType.PART || == RelationType.SUBTYPE ) ) )
@@ -99,7 +99,7 @@ rule "Expectable is a top"  agenda-group "observation" when
                                             action( set.add(  $rel.getSource() ); ),
                                             result( set ) )
 then
-    logger.debug( $pk.getName()+" is top of and his direct expectation is " + $directExpectation);
+    logger.debug( $pk.getName()+" is top and his direct expectation is " + $directExpectation);
     modify( $pk ){
         setExpectation( $result )
     };
@@ -111,7 +111,7 @@ then
     kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("expectation inference").setFocus();
 end
 
-rule "Prior-knowledge has the greatest truth degree value from all his brothers" agenda-group "qualifier mark" when
+rule "Prior-knowledge has the greatest truth degree value from all his brothers" no-loop true agenda-group "qualifier mark" when
     $pk: PriorKnowledge( prediction != TruthValuePowerSet.n )
     // take the parent prior-knowledge of $pk
     $relation: Relation(    target      isA PriorKnowledge,
@@ -139,7 +139,7 @@ then
     kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup("expectation inference").setFocus();
 end
 
-rule "Prior-knowledge has the smallest truth degree value from all his brothers" agenda-group "qualifier mark" when
+rule "Prior-knowledge has the smallest truth degree value from all his brothers" no-loop true agenda-group "qualifier mark" when
     $pk: PriorKnowledge( prediction != TruthValuePowerSet.n )
     // take the parent prior-knowledge of $pk
     $relation: Relation(    target        isA PriorKnowledge,
@@ -168,7 +168,7 @@ then
 end
 
 
-rule "Prior-knowledge is not the smallest and not the greatest truth degree value from all his brothers" agenda-group "qualifier mark" when
+rule "Prior-knowledge is not the smallest and not the greatest truth degree value from all his brothers" no-loop true agenda-group "qualifier mark" when
     $pk: PriorKnowledge( prediction != TruthValuePowerSet.n )
     // take the parent prior-knowledge of $pk
     $relation: Relation(    target        isA PriorKnowledge,

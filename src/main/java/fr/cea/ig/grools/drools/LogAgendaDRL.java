@@ -65,16 +65,16 @@ public class LogAgendaDRL implements AgendaEventListener {
 
     @Override
     public void matchCreated( final MatchCreatedEvent event ) {
-        final RuleTerminalNodeLeftTuple match   = ( RuleTerminalNodeLeftTuple ) event.getMatch();
-        final List<Object>              objects = match.getObjects();
-        final StringBuilder             sb      = new StringBuilder();
-        sb.append( "================ " + match.getRule().getName() +  " ================")
-          .append( '\n' );
-        final String obj = objects.stream()
-                                  .map( Object::toString )
-                                  .collect( Collectors.joining( "\n" ) );
-        sb.append( obj );
-        logger.debug( sb.toString() );
+//        final RuleTerminalNodeLeftTuple match   = ( RuleTerminalNodeLeftTuple ) event.getMatch();
+//        final List<Object>              objects = match.getObjects();
+//        final StringBuilder             sb      = new StringBuilder();
+//        sb.append( "================ " + match.getRule().getName() +  " ================")
+//          .append( '\n' );
+//        final String obj = objects.stream()
+//                                  .map( Object::toString )
+//                                  .collect( Collectors.joining( "\n" ) );
+//        sb.append( obj );
+//        logger.debug( sb.toString() );
     }
 
     @Override

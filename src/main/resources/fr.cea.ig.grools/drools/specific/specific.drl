@@ -51,7 +51,7 @@ global ch.qos.logback.classic.Logger logger;
 
 dialect "java"
 
-rule "PriorKnowledge is specific to a given priorKnowledge" agenda-group "specific mark" when
+rule "PriorKnowledge is specific to a given priorKnowledge" no-loop true agenda-group "specific mark" when
     $rel: Relation(source isA PriorKnowledge, target isA PriorKnowledge, type ( == RelationType.PART || == RelationType.SUBTYPE ) )
     $source: PriorKnowledge( this == $rel.source, isSpecific == false )
     $target: PriorKnowledge( this == $rel.target)
@@ -69,7 +69,7 @@ then
 end
 
 
-rule "PriorKnowledge is not specific to a given priorKnowledge" agenda-group "specific mark" when
+rule "PriorKnowledge is not specific to a given priorKnowledge" no-loop true agenda-group "specific mark" when
     $rel: Relation(source isA PriorKnowledge, target isA PriorKnowledge, type (== RelationType.PART || == RelationType.SUBTYPE  ) )
     $source: PriorKnowledge( this == $rel.source, isSpecific == true )
     $target: PriorKnowledge( this == $rel.target )
